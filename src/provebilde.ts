@@ -37,23 +37,9 @@ export class ProveBilde {
 
     private get isSafari(): boolean {
         const ua = window.navigator.userAgent;
-        const iOS = /iP(ad|od|hone)/iu.test(ua);
-        const hasSafariInUa = /Safari/iu.test(ua);
-        const noOtherBrowsersInUa =
-            !/Chrome|CriOS|OPiOS|mercury|FxiOS|Firefox/iu.test(ua);
-        let result: boolean;
-        if (iOS) {
-            //detecting Safari in IOS mobile browsers
-            const webkit = !!/WebKit/iu.test(ua);
-            result = webkit && hasSafariInUa && noOtherBrowsersInUa;
-        } else if ("safari" in window) {
-            //detecting Safari in Desktop Browsers
-            result = true;
-        } else {
-            // detecting Safari in other platforms
-            result = hasSafariInUa && noOtherBrowsersInUa;
-        }
-        return result;
+        const iOs = /iP(ad|od|hone)/iu.test(ua);
+        const mac = /Macintosh/iu.test(ua);
+        return iOs || mac;
     }
 
     private readonly options: ProveBildeOptions;

@@ -569,19 +569,9 @@
     }
     get isSafari() {
       const ua = window.navigator.userAgent;
-      const iOS = /iP(ad|od|hone)/iu.test(ua);
-      const hasSafariInUa = /Safari/iu.test(ua);
-      const noOtherBrowsersInUa = !/Chrome|CriOS|OPiOS|mercury|FxiOS|Firefox/iu.test(ua);
-      let result;
-      if (iOS) {
-        const webkit = !!/WebKit/iu.test(ua);
-        result = webkit && hasSafariInUa && noOtherBrowsersInUa;
-      } else if ("safari" in window) {
-        result = true;
-      } else {
-        result = hasSafariInUa && noOtherBrowsersInUa;
-      }
-      return result;
+      const iOs = /iP(ad|od|hone)/iu.test(ua);
+      const mac = /Macintosh/iu.test(ua);
+      return iOs || mac;
     }
     static setDefaultFont(ctx) {
       ctx.fillStyle = "#fff";
