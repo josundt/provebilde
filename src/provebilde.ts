@@ -33,6 +33,7 @@ export class ProveBilde {
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
         const safari = isSafari(window);
         this.textVerticalAdjust = safari ? 0 : 2;
+        this.dateTimeHorizontalPadding = safari ? 16 : 8;
     }
 
     private readonly options: ProveBildeOptions;
@@ -40,8 +41,10 @@ export class ProveBilde {
     private readonly background: ProveBildeBakgrunn;
     private readonly circle: ProveBildeSirkel;
     private watchTimer: number | null = 0;
-    private readonly textVerticalAdjust: number = 2;
-    private readonly textHorizontalPadding: number = 4;
+    private readonly headFootHorizontalPadding: number = 4;
+
+    private readonly textVerticalAdjust: number;
+    private readonly dateTimeHorizontalPadding: number;
 
     private static setJustifyWordSpacing(
         ctx: CanvasRenderingContext2D,
@@ -83,7 +86,7 @@ export class ProveBilde {
             text.toUpperCase(),
             0,
             0,
-            headerW - this.textHorizontalPadding * 2
+            headerW - this.headFootHorizontalPadding * 2
         );
 
         ctx.restore();
@@ -111,7 +114,12 @@ export class ProveBilde {
             .map(p => p.toString().padStart(2, "0"))
             .join(format === "date" ? " - " : " : ");
 
-        ProveBilde.setJustifyWordSpacing(ctx, formatted, w - 16, true);
+        ProveBilde.setJustifyWordSpacing(
+            ctx,
+            formatted,
+            w - this.dateTimeHorizontalPadding * 2,
+            true
+        );
 
         ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
 

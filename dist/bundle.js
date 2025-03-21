@@ -559,8 +559,7 @@
   var ProveBilde = class _ProveBilde {
     constructor(ctx, options2 = {}) {
       this.watchTimer = 0;
-      this.textVerticalAdjust = 2;
-      this.textHorizontalPadding = 4;
+      this.headFootHorizontalPadding = 4;
       this.options = options2;
       this.ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
@@ -569,6 +568,7 @@
       this.circle = new ProveBildeSirkel(ctx, edgeColor);
       const safari = isSafari(window);
       this.textVerticalAdjust = safari ? 0 : 2;
+      this.dateTimeHorizontalPadding = safari ? 16 : 8;
     }
     static setJustifyWordSpacing(ctx, text, maxWidth, allowReduce) {
       const normalizedText = text.replace(/\s+/gu, " ").trim();
@@ -596,7 +596,7 @@
         text.toUpperCase(),
         0,
         0,
-        headerW - this.textHorizontalPadding * 2
+        headerW - this.headFootHorizontalPadding * 2
       );
       ctx.restore();
     }
@@ -611,7 +611,12 @@
       _ProveBilde.setDefaultFont(ctx);
       const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1e3] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
       const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? " - " : " : ");
-      _ProveBilde.setJustifyWordSpacing(ctx, formatted, w - 16, true);
+      _ProveBilde.setJustifyWordSpacing(
+        ctx,
+        formatted,
+        w - this.dateTimeHorizontalPadding * 2,
+        true
+      );
       ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
       ctx.restore();
     }
