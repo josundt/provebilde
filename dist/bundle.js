@@ -564,6 +564,10 @@
       const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.circle = new ProveBildeSirkel(ctx, edgeColor);
+      this.textVerticalAdjust = this.isSafari ? 0 : 2;
+    }
+    get isSafari() {
+      return /^((?!chrome|android).)*safari/iu.test(navigator.userAgent);
     }
     static setJustifyWordSpacing(ctx, text, maxWidth, allowReduce) {
       const normalizedText = text.replace(/\s+/gu, " ").trim();
@@ -686,6 +690,7 @@
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
     proveBilde.start();
+    document.title = window.navigator.userAgent;
   }
   var debouncedInit = debounce(init, 400);
   document.addEventListener("DOMContentLoaded", () => {

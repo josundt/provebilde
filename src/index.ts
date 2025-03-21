@@ -34,6 +34,7 @@ function init(): void {
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
     proveBilde.start();
+    document.title = window.navigator.userAgent;
 }
 
 const debouncedInit = debounce(init, 400);

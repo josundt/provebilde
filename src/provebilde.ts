@@ -30,6 +30,11 @@ export class ProveBilde {
             : defaultEdgeColor;
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
+        this.textVerticalAdjust = this.isSafari ? 0 : 2;
+    }
+
+    private get isSafari(): boolean {
+        return /^((?!chrome|android).)*safari/iu.test(navigator.userAgent);
     }
 
     private readonly options: ProveBildeOptions;
