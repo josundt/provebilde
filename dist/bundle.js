@@ -584,11 +584,11 @@
     darken: "rgb(0 0 0 / 0.333)"
   };
   var ProveBilde = class {
-    constructor(ctx, options2 = {}) {
-      this.#options = options2;
+    constructor(ctx, options3 = {}) {
+      this.#options = options3;
       this.#ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
-      const edgeColor = options2.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
+      const edgeColor = options3.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.#background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.#circle = new ProveBildeSirkel(ctx, edgeColor);
       const safari = isSafari(window);
@@ -703,31 +703,20 @@
     }
   };
 
-  // src/index.ts
-  var options = {
-    headerText: "jasMIN",
-    footerText: "Retro TV",
-    showDate: true,
-    showTime: true,
-    blurredEdgesDisabled: false,
-    imageSmootingDisabled: false
-  };
+  // src/plugin.ts
   var proveBilde;
   var canvas;
-  function init() {
+  var options;
+  function start() {
     if (proveBilde) {
       proveBilde.stop();
     }
-    if (!canvas) {
-      canvas = document.getElementById("provebilde");
-      canvas.addEventListener(
-        "click",
-        (e) => toggleFullScreen(e.target)
-      );
-    }
     const ctx = canvas.getContext("2d");
     const [palW, palH] = pal;
-    const [winW, winH] = [window.innerWidth, window.innerHeight];
+    const [winW, winH] = [
+      ctx.canvas.parentElement.clientWidth,
+      ctx.canvas.parentElement.clientHeight
+    ];
     const [scaleX, scaleY] = [winW / palW, winH / palH];
     const scale = Math.min(scaleX, scaleY);
     canvas.width = palW * scale;
@@ -735,14 +724,33 @@
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
     proveBilde.start();
-  }
-  var debouncedInit = debounce(init, 400);
-  document.addEventListener("DOMContentLoaded", () => {
-    init();
     document.body.style.zoom = "1";
-  });
-  window.addEventListener("resize", () => {
-    debouncedInit();
-  });
+  }
+  var debouncedStart = debounce(start, 100);
+  function initPlugin(o) {
+    options = o;
+    const container = document.querySelector(options.containerSelector);
+    canvas = document.createElement("canvas");
+    container?.appendChild(canvas);
+    canvas.addEventListener(
+      "click",
+      (e) => toggleFullScreen(e.target)
+    );
+    const resizeObserver = new ResizeObserver(debouncedStart);
+    resizeObserver.observe(container);
+    start();
+  }
+
+  // src/index.ts
+  var options2 = {
+    containerSelector: "body",
+    headerText: "jasMIN",
+    footerText: "Retro TV",
+    showDate: true,
+    showTime: true,
+    blurredEdgesDisabled: false,
+    imageSmootingDisabled: false
+  };
+  document.addEventListener("DOMContentLoaded", () => initPlugin(options2));
 })();
 //# sourceMappingURL=bundle.js.map
