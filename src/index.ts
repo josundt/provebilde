@@ -36,11 +36,12 @@ function init(): void {
     proveBilde.start();
 }
 
+const debouncedInit = debounce(init, 400);
+
 document.addEventListener("DOMContentLoaded", () => {
     init();
+    debouncedInit();
 });
-
-const debouncedInit = debounce(init, 400);
 
 window.addEventListener("resize", () => {
     debouncedInit();

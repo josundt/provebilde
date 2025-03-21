@@ -659,10 +659,11 @@
     proveBilde = new ProveBilde(ctx, options);
     proveBilde.start();
   }
+  var debouncedInit = debounce(init, 400);
   document.addEventListener("DOMContentLoaded", () => {
     init();
+    debouncedInit();
   });
-  var debouncedInit = debounce(init, 400);
   window.addEventListener("resize", () => {
     debouncedInit();
   });
