@@ -11,12 +11,19 @@ const options: ProveBildeOptions = {
 };
 
 let proveBilde: ProveBilde;
+let canvas: HTMLCanvasElement;
 
 function init(): void {
     if (proveBilde) {
         proveBilde.stop();
     }
-    const canvas = document.getElementById("provebilde") as HTMLCanvasElement;
+    if (!canvas) {
+        canvas = document.getElementById("provebilde") as HTMLCanvasElement;
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        canvas.addEventListener("click", e =>
+            (e.target as HTMLElement).requestFullscreen()
+        );
+    }
     const ctx = canvas.getContext("2d")!;
     const [palW, palH] = pal;
     const [winW, winH] = [window.innerWidth, window.innerHeight];

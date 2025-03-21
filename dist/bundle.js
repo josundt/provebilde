@@ -636,11 +636,18 @@
     noBlurEdges: false
   };
   var proveBilde;
+  var canvas;
   function init() {
     if (proveBilde) {
       proveBilde.stop();
     }
-    const canvas = document.getElementById("provebilde");
+    if (!canvas) {
+      canvas = document.getElementById("provebilde");
+      canvas.addEventListener(
+        "click",
+        (e) => e.target.requestFullscreen()
+      );
+    }
     const ctx = canvas.getContext("2d");
     const [palW, palH] = pal;
     const [winW, winH] = [window.innerWidth, window.innerHeight];
