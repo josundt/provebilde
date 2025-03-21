@@ -563,10 +563,12 @@
       const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.circle = new ProveBildeSirkel(ctx, edgeColor);
-      this.textVerticalAdjust = this.isSafari ? 0 : 2;
+      const { isSafari } = this;
+      this.textVerticalAdjust = isSafari ? 0 : 2;
+      this.textTimeSeparatorSpacing = isSafari ? [0, 0] : [-5, -3];
     }
     get isSafari() {
-      return navigator.userAgent.toLowerCase().includes("safari/");
+      return navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome");
     }
     static setDefaultFont(ctx) {
       ctx.fillStyle = "#fff";
@@ -592,7 +594,8 @@
       ctx.fillStyle = "#000";
       ctx.fillRect(cX, cY - h / 2, w, h);
       _ProveBilde.setDefaultFont(ctx);
-      ctx.wordSpacing = format === "date" ? "-5px" : "-3px";
+      const wordspacing = this.textTimeSeparatorSpacing[format === "date" ? 0 : 1];
+      ctx.wordSpacing = `${wordspacing}px`;
       const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1e3] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
       const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? " - " : " : ");
       ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);

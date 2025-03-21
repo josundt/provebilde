@@ -30,11 +30,16 @@ export class ProveBilde {
             : defaultEdgeColor;
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
-        this.textVerticalAdjust = this.isSafari ? 0 : 2;
+        const { isSafari } = this;
+        this.textVerticalAdjust = isSafari ? 0 : 2;
+        this.textTimeSeparatorSpacing = isSafari ? [0, 0] : [-5, -3];
     }
 
     private get isSafari(): boolean {
-        return navigator.userAgent.toLowerCase().includes("safari/");
+        return (
+            navigator.userAgent.includes("Safari") &&
+            !navigator.userAgent.includes("Chrome")
+        );
     }
 
     private readonly options: ProveBildeOptions;
@@ -43,6 +48,10 @@ export class ProveBilde {
     private readonly circle: ProveBildeSirkel;
     private watchTimer: number | null = 0;
     private readonly textVerticalAdjust: number = 2;
+    private readonly textTimeSeparatorSpacing: readonly [
+        dateSpacing: number,
+        timeSpacing: number
+    ];
 
     private static setDefaultFont(ctx: CanvasRenderingContext2D): void {
         ctx.fillStyle = "#fff";
@@ -73,7 +82,9 @@ export class ProveBilde {
         ctx.fillStyle = "#000";
         ctx.fillRect(cX, cY - h / 2, w, h);
         ProveBilde.setDefaultFont(ctx);
-        ctx.wordSpacing = format === "date" ? "-5px" : "-3px";
+        const wordspacing =
+            this.textTimeSeparatorSpacing[format === "date" ? 0 : 1];
+        ctx.wordSpacing = `${wordspacing}px`;
         const textParts =
             format === "date"
                 ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1_000]
