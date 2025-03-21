@@ -51,3 +51,23 @@ export function isSafari(win: Window): boolean {
         window.navigator.userAgent.includes("Safari")
     );
 }
+
+let isFullScreen = false;
+let fullScreenTogglePromise: Promise<void> | null = null;
+
+export function toggleFullScreen(elem: HTMLElement): void {
+    if (fullScreenTogglePromise) {
+        return;
+    }
+    if (isFullScreen) {
+        fullScreenTogglePromise = document.exitFullscreen();
+    } else {
+        fullScreenTogglePromise = elem.requestFullscreen();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    fullScreenTogglePromise
+        .then(() => {
+            isFullScreen = !isFullScreen;
+        })
+        .finally(() => (fullScreenTogglePromise = null));
+}

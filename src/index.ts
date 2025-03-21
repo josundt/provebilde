@@ -1,6 +1,6 @@
 import { pal } from "./constants.ts";
 import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
-import { debounce } from "./utils.ts";
+import { debounce, toggleFullScreen } from "./utils.ts";
 
 const options: ProveBildeOptions = {
     headerText: "jasMIN",
@@ -19,9 +19,8 @@ function init(): void {
     }
     if (!canvas) {
         canvas = document.getElementById("provebilde") as HTMLCanvasElement;
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         canvas.addEventListener("click", e =>
-            (e.target as HTMLElement).requestFullscreen()
+            toggleFullScreen(e.target as HTMLElement)
         );
     }
     const ctx = canvas.getContext("2d")!;

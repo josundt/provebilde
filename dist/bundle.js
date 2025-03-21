@@ -36,6 +36,21 @@
   function isSafari(win) {
     return window.navigator.userAgent.includes("Mac OS X") && window.navigator.userAgent.includes("Safari");
   }
+  var isFullScreen = false;
+  var fullScreenTogglePromise = null;
+  function toggleFullScreen(elem) {
+    if (fullScreenTogglePromise) {
+      return;
+    }
+    if (isFullScreen) {
+      fullScreenTogglePromise = document.exitFullscreen();
+    } else {
+      fullScreenTogglePromise = elem.requestFullscreen();
+    }
+    fullScreenTogglePromise.then(() => {
+      isFullScreen = !isFullScreen;
+    }).finally(() => fullScreenTogglePromise = null);
+  }
 
   // src/provebilde-bakgrunn.ts
   var ProveBildeBakgrunn = class {
@@ -702,7 +717,7 @@
       canvas = document.getElementById("provebilde");
       canvas.addEventListener(
         "click",
-        (e) => e.target.requestFullscreen()
+        (e) => toggleFullScreen(e.target)
       );
     }
     const ctx = canvas.getContext("2d");
