@@ -7,7 +7,9 @@ const options: ProveBildeOptions = {
     footerText: "Retro TV",
     showDate: true,
     showTime: true,
-    noBlurEdges: false
+
+    blurredEdgesDisabled: false,
+    imageSmootingDisabled: false
 };
 
 let proveBilde: ProveBilde;

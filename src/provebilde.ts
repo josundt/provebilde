@@ -5,11 +5,12 @@ import { ProveBildeSirkel } from "./provebilde-sirkel.ts";
 import { isSafari } from "./utils.ts";
 
 export interface ProveBildeOptions {
-    noBlurEdges?: boolean;
+    blurredEdgesDisabled?: boolean;
     headerText?: string;
     footerText?: string;
     showDate?: boolean;
     showTime?: boolean;
+    imageSmootingDisabled?: boolean;
 }
 
 export const defaultEdgeColor: EdgeColor = {
@@ -26,7 +27,7 @@ export class ProveBilde {
         this.#ctx = ctx;
 
         const transp = "rgb(0 0 0 / 0)";
-        const edgeColor: EdgeColor = options.noBlurEdges
+        const edgeColor: EdgeColor = options.blurredEdgesDisabled
             ? { lighten: transp, darken: transp }
             : defaultEdgeColor;
         this.#background = new ProveBildeBakgrunn(ctx, edgeColor);
@@ -148,7 +149,10 @@ export class ProveBilde {
         const ctx = this.#ctx;
 
         ctx.save();
-        ctx.imageSmoothingEnabled = false;
+
+        if (this.#options.imageSmootingDisabled) {
+            ctx.imageSmoothingEnabled = false;
+        }
 
         this.#background.render();
         this.#circle.render();

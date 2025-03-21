@@ -180,6 +180,8 @@
     #drawGrid() {
       const ctx = this.#ctx;
       ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, ...pal);
       const [palW, palH] = pal;
       const [gridOffsetX, gridOffsetY] = this.#gridOffset;
       for (let transY = gridOffsetY; transY < palH; transY += this.#gridSquareSize) {
@@ -586,7 +588,7 @@
       this.#options = options2;
       this.#ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
-      const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
+      const edgeColor = options2.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.#background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.#circle = new ProveBildeSirkel(ctx, edgeColor);
       const safari = isSafari(window);
@@ -677,7 +679,9 @@
     start() {
       const ctx = this.#ctx;
       ctx.save();
-      ctx.imageSmoothingEnabled = false;
+      if (this.#options.imageSmootingDisabled) {
+        ctx.imageSmoothingEnabled = false;
+      }
       this.#background.render();
       this.#circle.render();
       const [palW, palH] = pal;
@@ -705,7 +709,8 @@
     footerText: "Retro TV",
     showDate: true,
     showTime: true,
-    noBlurEdges: false
+    blurredEdgesDisabled: false,
+    imageSmootingDisabled: false
   };
   var proveBilde;
   var canvas;

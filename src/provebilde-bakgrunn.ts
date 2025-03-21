@@ -154,6 +154,12 @@ export class ProveBildeBakgrunn {
     #drawGrid(): void {
         const ctx = this.#ctx;
         ctx.save();
+
+        // Render white background
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, ...pal);
+
+        // Render grid squares
         const [palW, palH] = pal;
         const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         for (
