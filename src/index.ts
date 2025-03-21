@@ -1,6 +1,6 @@
 import { pal } from "./constants.ts";
 import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
-import { debounce, isSafari } from "./utils.ts";
+import { debounce } from "./utils.ts";
 
 const options: ProveBildeOptions = {
     headerText: "Jørn A",
@@ -33,9 +33,7 @@ function init(): void {
     canvas.height = palH * scale;
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
-    // proveBilde.start();
-    document.writeln(window.navigator.userAgent);
-    document.writeln(`Safari: ${isSafari(window).toString()}`);
+    proveBilde.start();
 }
 
 const debouncedInit = debounce(init, 400);

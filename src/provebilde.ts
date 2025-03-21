@@ -2,6 +2,7 @@ import type { EdgeColor } from "./abstractions.ts";
 import { pal } from "./constants.ts";
 import { ProveBildeBakgrunn } from "./provebilde-bakgrunn.ts";
 import { ProveBildeSirkel } from "./provebilde-sirkel.ts";
+import { isSafari } from "./utils.ts";
 
 export interface ProveBildeOptions {
     noBlurEdges?: boolean;
@@ -30,11 +31,8 @@ export class ProveBilde {
             : defaultEdgeColor;
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
-        this.textVerticalAdjust = this.isSafari ? 0 : 2;
-    }
-
-    private get isSafari(): boolean {
-        return /^((?!chrome|android).)*safari/iu.test(navigator.userAgent);
+        const safari = isSafari(window);
+        this.textVerticalAdjust = safari ? 0 : 2;
     }
 
     private readonly options: ProveBildeOptions;

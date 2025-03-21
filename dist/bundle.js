@@ -567,10 +567,8 @@
       const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.circle = new ProveBildeSirkel(ctx, edgeColor);
-      this.textVerticalAdjust = this.isSafari ? 0 : 2;
-    }
-    get isSafari() {
-      return /^((?!chrome|android).)*safari/iu.test(navigator.userAgent);
+      const safari = isSafari(window);
+      this.textVerticalAdjust = safari ? 0 : 2;
     }
     static setJustifyWordSpacing(ctx, text, maxWidth, allowReduce) {
       const normalizedText = text.replace(/\s+/gu, " ").trim();
@@ -692,8 +690,7 @@
     canvas.height = palH * scale;
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
-    document.writeln(window.navigator.userAgent);
-    document.writeln(`Safari: ${isSafari(window).toString()}`);
+    proveBilde.start();
   }
   var debouncedInit = debounce(init, 400);
   document.addEventListener("DOMContentLoaded", () => {
