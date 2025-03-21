@@ -26,6 +26,11 @@ export function debounce<TArgs extends any[]>(
     };
 }
 
+/**
+ * Helper to overcome missing OffscreenCanvas support in Safari
+ * @param size The size
+ * @returns The off/on screen rendering context
+ */
 export function createOffscreenCanvasContext(
     ...size: Size
 ): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {

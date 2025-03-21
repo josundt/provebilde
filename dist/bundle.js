@@ -556,12 +556,17 @@
   var ProveBilde = class _ProveBilde {
     constructor(ctx, options2 = {}) {
       this.watchTimer = 0;
+      this.textVerticalAdjust = 2;
       this.options = options2;
       this.ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
       const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.background = new ProveBildeBakgrunn(ctx, edgeColor);
       this.circle = new ProveBildeSirkel(ctx, edgeColor);
+      this.textVerticalAdjust = this.isSafari ? 0 : 2;
+    }
+    get isSafari() {
+      return navigator.userAgent.toLowerCase().includes("safari/");
     }
     static setDefaultFont(ctx) {
       ctx.fillStyle = "#fff";
@@ -573,7 +578,7 @@
       const { ctx } = this;
       const [headerW, headerH] = [168, 42];
       ctx.save();
-      ctx.translate(cX, yOffset + headerH / 2 + 2);
+      ctx.translate(cX, yOffset + headerH / 2 + this.textVerticalAdjust);
       _ProveBilde.setDefaultFont(ctx);
       ctx.fillText(text.toUpperCase(), 0, 0, headerW - 8);
       ctx.restore();
@@ -590,7 +595,7 @@
       ctx.wordSpacing = format === "date" ? "-5px" : "-3px";
       const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1e3] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
       const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? " - " : " : ");
-      ctx.fillText(formatted, cX + w / 2, cY + 2);
+      ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
       ctx.restore();
     }
     stopWatch() {

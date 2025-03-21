@@ -30,6 +30,11 @@ export class ProveBilde {
             : defaultEdgeColor;
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
+        this.textVerticalAdjust = this.isSafari ? 0 : 2;
+    }
+
+    private get isSafari(): boolean {
+        return navigator.userAgent.toLowerCase().includes("safari/");
     }
 
     private readonly options: ProveBildeOptions;
@@ -37,6 +42,7 @@ export class ProveBilde {
     private readonly background: ProveBildeBakgrunn;
     private readonly circle: ProveBildeSirkel;
     private watchTimer: number | null = 0;
+    private readonly textVerticalAdjust: number = 2;
 
     private static setDefaultFont(ctx: CanvasRenderingContext2D): void {
         ctx.fillStyle = "#fff";
@@ -50,7 +56,7 @@ export class ProveBilde {
         const [headerW, headerH] = [168, 42];
 
         ctx.save();
-        ctx.translate(cX, yOffset + headerH / 2 + 2);
+        ctx.translate(cX, yOffset + headerH / 2 + this.textVerticalAdjust);
         ProveBilde.setDefaultFont(ctx);
         ctx.fillText(text.toUpperCase(), 0, 0, headerW - 8);
 
@@ -77,7 +83,7 @@ export class ProveBilde {
             .map(p => p.toString().padStart(2, "0"))
             .join(format === "date" ? " - " : " : ");
 
-        ctx.fillText(formatted, cX + w / 2, cY + 2);
+        ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
 
         ctx.restore();
     }
