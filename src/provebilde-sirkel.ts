@@ -1,5 +1,6 @@
 import type { EdgeColor, Rect } from "./abstractions.ts";
 import { pal } from "./constants.ts";
+import { createOffscreenCanvasContext } from "./utils.ts";
 
 export class ProveBildeSirkel {
     constructor(ctx: CanvasRenderingContext2D, edgeColor: EdgeColor) {
@@ -30,7 +31,7 @@ export class ProveBildeSirkel {
     }
 
     private createGradientPattern(width: number): CanvasPattern {
-        const ctx = new OffscreenCanvas(width, 1).getContext("2d")!;
+        const ctx = createOffscreenCanvasContext(width, 1);
         const gradient = ctx.createLinearGradient(0, 0, width, 1);
         gradient.addColorStop(0, "#000");
         gradient.addColorStop(0.5, "#fff");

@@ -1,6 +1,6 @@
 import { pal } from "./constants.ts";
-import { debounce } from "./debounce.ts";
 import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
+import { debounce } from "./utils.ts";
 
 const options: ProveBildeOptions = {
     headerText: "Jørn A",

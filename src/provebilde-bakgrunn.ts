@@ -1,5 +1,6 @@
 import type { Coord, EdgeColor } from "./abstractions.ts";
 import { pal } from "./constants.ts";
+import { createOffscreenCanvasContext } from "./utils.ts";
 
 export class ProveBildeBakgrunn {
     constructor(ctx: CanvasRenderingContext2D, edgeColor: EdgeColor) {
@@ -112,7 +113,7 @@ export class ProveBildeBakgrunn {
     private createGridStripePatterns(
         ...palettes: Array<[color1: string, color2: string]>
     ): CanvasPattern[] {
-        const ctx = new OffscreenCanvas(1, 4).getContext("2d")!;
+        const ctx = createOffscreenCanvasContext(1, 4);
         return palettes.map(([color1, color2]) => {
             ctx.fillStyle = color1;
             ctx.fillRect(0, 0, 1, 2);
@@ -126,10 +127,10 @@ export class ProveBildeBakgrunn {
         stripePattern: CanvasPattern,
         noStripesAt: "top" | "bottom"
     ): CanvasPattern {
-        const ctx = new OffscreenCanvas(
+        const ctx = createOffscreenCanvasContext(
             this.gridSquareSize,
             this.gridSquareSize
-        ).getContext("2d")!;
+        );
         ctx.fillStyle = stripePattern;
         ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize);
         ctx.fillStyle = this.defaultGray;

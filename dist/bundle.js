@@ -2,7 +2,7 @@
   // src/constants.ts
   var pal = [768, 576];
 
-  // src/debounce.ts
+  // src/utils.ts
   function debounce(func, wait, immediate = false) {
     let timeout = null;
     return (...args) => {
@@ -21,6 +21,17 @@
         func(...args);
       }
     };
+  }
+  function createOffscreenCanvasContext(...size) {
+    let result;
+    if ("OffscreenCanvas" in self) {
+      result = new OffscreenCanvas(...size).getContext("2d");
+    } else {
+      const canvas2 = document.createElement("canvas");
+      [canvas2.width, canvas2.height] = size;
+      return canvas2.getContext("2d");
+    }
+    return result;
   }
 
   // src/provebilde-bakgrunn.ts
@@ -111,7 +122,7 @@
       return result;
     }
     createGridStripePatterns(...palettes) {
-      const ctx = new OffscreenCanvas(1, 4).getContext("2d");
+      const ctx = createOffscreenCanvasContext(1, 4);
       return palettes.map(([color1, color2]) => {
         ctx.fillStyle = color1;
         ctx.fillRect(0, 0, 1, 2);
@@ -121,10 +132,10 @@
       });
     }
     makeHalfGridStripePattern(stripePattern, noStripesAt) {
-      const ctx = new OffscreenCanvas(
+      const ctx = createOffscreenCanvasContext(
         this.gridSquareSize,
         this.gridSquareSize
-      ).getContext("2d");
+      );
       ctx.fillStyle = stripePattern;
       ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize);
       ctx.fillStyle = this.defaultGray;
@@ -340,7 +351,7 @@
       return result;
     }
     createGradientPattern(width) {
-      const ctx = new OffscreenCanvas(width, 1).getContext("2d");
+      const ctx = createOffscreenCanvasContext(width, 1);
       const gradient = ctx.createLinearGradient(0, 0, width, 1);
       gradient.addColorStop(0, "#000");
       gradient.addColorStop(0.5, "#fff");
