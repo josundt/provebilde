@@ -40,6 +40,7 @@ const debouncedInit = debounce(init, 400);
 
 document.addEventListener("DOMContentLoaded", () => {
     init();
+    document.body.style.zoom = "1";
 });
 
 window.addEventListener("resize", () => {
