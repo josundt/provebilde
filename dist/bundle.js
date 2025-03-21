@@ -689,8 +689,7 @@
     canvas.height = palH * scale;
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
-    proveBilde.start();
-    document.title = window.navigator.userAgent;
+    document.writeln(window.navigator.userAgent);
   }
   var debouncedInit = debounce(init, 400);
   document.addEventListener("DOMContentLoaded", () => {

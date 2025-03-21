@@ -33,8 +33,8 @@ function init(): void {
     canvas.height = palH * scale;
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
-    proveBilde.start();
-    document.title = window.navigator.userAgent;
+    // proveBilde.start();
+    document.writeln(window.navigator.userAgent);
 }
 
 const debouncedInit = debounce(init, 400);
