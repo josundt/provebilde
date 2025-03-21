@@ -7,4 +7,5 @@ body {
     justify-content: center;
     align-items: center;
     background-color: #000;
+    min-width: 768px;
 }

@@ -40,7 +40,6 @@ const debouncedInit = debounce(init, 400);
 
 document.addEventListener("DOMContentLoaded", () => {
     init();
-    debouncedInit();
 });
 
 window.addEventListener("resize", () => {
