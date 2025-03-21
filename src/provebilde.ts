@@ -41,13 +41,11 @@ export class ProveBilde {
     readonly #ctx: CanvasRenderingContext2D;
     readonly #background: ProveBildeBakgrunn;
     readonly #circle: ProveBildeSirkel;
-    readonly #headFootHorizontalPadding: number = 6;
-
-    #watchTimer: number | null = 0;
-
     readonly #textVerticalAdjust: number;
 
-    // readonly #dateTimeHorizontalPadding: number;;
+    readonly #headFootHorizontalPadding: number = 6;
+    #watchTimer: number | null = 0;
+
     #setDefaultFont(): void {
         const ctx = this.#ctx;
         ctx.fillStyle = "#fff";

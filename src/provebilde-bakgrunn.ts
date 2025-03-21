@@ -16,9 +16,10 @@ export class ProveBildeBakgrunn {
     readonly #ctx: CanvasRenderingContext2D;
     readonly #edgeColor: EdgeColor;
 
-    readonly #gridSquareSize: number = 42;
     readonly #leftGridStripesPattern: CanvasPattern;
     readonly #rightGridStripesPattern: CanvasPattern;
+
+    readonly #gridSquareSize: number = 42;
     readonly #defaultGray: string = "#7a7a7a";
     readonly #gridOffset: Coord = [-15, -27];
 
