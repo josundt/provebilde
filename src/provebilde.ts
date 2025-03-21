@@ -31,9 +31,8 @@ export class ProveBilde {
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
         const { isSafari } = this;
-        document.writeln(isSafari.toString());
         this.textVerticalAdjust = isSafari ? 0 : 2;
-        this.textTimeSeparatorSpacing = isSafari ? [0, 0] : [-5, -3];
+        this.textTimeSeparatorSpacing = isSafari ? [-20, -20] : [-5, -3];
     }
 
     private get isSafari(): boolean {
