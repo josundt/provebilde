@@ -4,41 +4,41 @@ import { createOffscreenCanvasContext } from "./utils.ts";
 
 export class ProveBildeBakgrunn {
     constructor(ctx: CanvasRenderingContext2D, edgeColor: EdgeColor) {
-        this.edgeColor = edgeColor;
-        this.ctx = ctx;
-        [this.leftGridStripesPattern, this.rightGridStripesPattern] =
-            this.createGridStripePatterns(
+        this.#edgeColor = edgeColor;
+        this.#ctx = ctx;
+        [this.#leftGridStripesPattern, this.#rightGridStripesPattern] =
+            this.#createGridStripePatterns(
                 ["#b85a7a", "#3c9a7a"],
                 ["#7a64e9", "#7a900b"]
             );
     }
 
-    private readonly edgeColor: EdgeColor;
-    private readonly ctx: CanvasRenderingContext2D;
+    readonly #ctx: CanvasRenderingContext2D;
+    readonly #edgeColor: EdgeColor;
 
-    private readonly gridSquareSize: number = 42;
-    private readonly leftGridStripesPattern: CanvasPattern;
-    private readonly rightGridStripesPattern: CanvasPattern;
-    private readonly defaultGray: string = "#7a7a7a";
-    private readonly gridOffset: Coord = [-15, -27];
+    readonly #gridSquareSize: number = 42;
+    readonly #leftGridStripesPattern: CanvasPattern;
+    readonly #rightGridStripesPattern: CanvasPattern;
+    readonly #defaultGray: string = "#7a7a7a";
+    readonly #gridOffset: Coord = [-15, -27];
 
-    private get gridSquareColCount(): number {
+    get #gridSquareColCount(): number {
         const [w] = pal;
-        const [offsetX] = this.gridOffset;
-        const size = this.gridSquareSize;
+        const [offsetX] = this.#gridOffset;
+        const size = this.#gridSquareSize;
         return Math.ceil((w - offsetX) / size);
     }
 
-    private get gridSquareRowCount(): number {
+    get #gridSquareRowCount(): number {
         const [, h] = pal;
-        const [, offsetY] = this.gridOffset;
-        const size = this.gridSquareSize;
+        const [, offsetY] = this.#gridOffset;
+        const size = this.#gridSquareSize;
         return Math.ceil((h - offsetY) / size);
     }
 
-    private drawGridSquare(fillStyle: string | CanvasPattern): void {
-        const size = this.gridSquareSize;
-        const { ctx } = this;
+    #drawGridSquare(fillStyle: string | CanvasPattern): void {
+        const size = this.#gridSquareSize;
+        const ctx = this.#ctx;
         ctx.save();
 
         // Draw white outline
@@ -50,19 +50,22 @@ export class ProveBildeBakgrunn {
         ctx.fillRect(1, 1, size - 2, size - 2);
 
         // Draw side "blur" borders
-        ctx.fillStyle = this.edgeColor.lighten;
+        ctx.fillStyle = this.#edgeColor.lighten;
         ctx.fillRect(1, 1, 1, size - 2);
         ctx.fillRect(size - 2, 1, 1, size);
 
         ctx.restore();
     }
 
-    private getGridSquareFill(...offset: Coord): string | CanvasPattern {
-        const [cols, rows] = [this.gridSquareColCount, this.gridSquareRowCount];
+    #getGridSquareFill(...offset: Coord): string | CanvasPattern {
+        const [cols, rows] = [
+            this.#gridSquareColCount,
+            this.#gridSquareRowCount
+        ];
         const [x, y] = offset;
-        const [gridOffsetX, gridOffsetY] = this.gridOffset;
-        const horSquareIndex = (x - gridOffsetX) / this.gridSquareSize;
-        const verSquareIndex = (y - gridOffsetY) / this.gridSquareSize;
+        const [gridOffsetX, gridOffsetY] = this.#gridOffset;
+        const horSquareIndex = (x - gridOffsetX) / this.#gridSquareSize;
+        const verSquareIndex = (y - gridOffsetY) / this.#gridSquareSize;
         const isOutsideHorBounds =
             horSquareIndex === 0 || horSquareIndex >= cols - 1;
         const isOutsideVerBounds =
@@ -78,39 +81,39 @@ export class ProveBildeBakgrunn {
             result = isEven ? "#fff" : "#000";
         } else if (isSecondLeftMostSquare) {
             if (isSecondTopMostSquare) {
-                result = this.makeHalfGridStripePattern(
-                    this.leftGridStripesPattern,
+                result = this.#makeHalfGridStripePattern(
+                    this.#leftGridStripesPattern,
                     "top"
                 );
             } else if (isSecondBottomMostSquare) {
-                result = this.makeHalfGridStripePattern(
-                    this.leftGridStripesPattern,
+                result = this.#makeHalfGridStripePattern(
+                    this.#leftGridStripesPattern,
                     "bottom"
                 );
             } else {
-                result = this.leftGridStripesPattern;
+                result = this.#leftGridStripesPattern;
             }
         } else if (isSecondRightMostSquare) {
             if (isSecondTopMostSquare) {
-                result = this.makeHalfGridStripePattern(
-                    this.rightGridStripesPattern,
+                result = this.#makeHalfGridStripePattern(
+                    this.#rightGridStripesPattern,
                     "top"
                 );
             } else if (isSecondBottomMostSquare) {
-                result = this.makeHalfGridStripePattern(
-                    this.rightGridStripesPattern,
+                result = this.#makeHalfGridStripePattern(
+                    this.#rightGridStripesPattern,
                     "bottom"
                 );
             } else {
-                result = this.rightGridStripesPattern;
+                result = this.#rightGridStripesPattern;
             }
         } else {
-            result = this.defaultGray;
+            result = this.#defaultGray;
         }
         return result;
     }
 
-    private createGridStripePatterns(
+    #createGridStripePatterns(
         ...palettes: Array<[color1: string, color2: string]>
     ): CanvasPattern[] {
         const ctx = createOffscreenCanvasContext(1, 4);
@@ -123,57 +126,57 @@ export class ProveBildeBakgrunn {
         });
     }
 
-    private makeHalfGridStripePattern(
+    #makeHalfGridStripePattern(
         stripePattern: CanvasPattern,
         noStripesAt: "top" | "bottom"
     ): CanvasPattern {
         const ctx = createOffscreenCanvasContext(
-            this.gridSquareSize,
-            this.gridSquareSize
+            this.#gridSquareSize,
+            this.#gridSquareSize
         );
         ctx.fillStyle = stripePattern;
-        ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize);
-        ctx.fillStyle = this.defaultGray;
+        ctx.fillRect(0, 0, this.#gridSquareSize, this.#gridSquareSize);
+        ctx.fillStyle = this.#defaultGray;
         if (noStripesAt === "top") {
-            ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize / 2);
+            ctx.fillRect(0, 0, this.#gridSquareSize, this.#gridSquareSize / 2);
         } else {
             ctx.fillRect(
                 0,
-                this.gridSquareSize / 2,
-                this.gridSquareSize,
-                this.gridSquareSize / 2
+                this.#gridSquareSize / 2,
+                this.#gridSquareSize,
+                this.#gridSquareSize / 2
             );
         }
         ctx.fill();
         return ctx.createPattern(ctx.canvas, "repeat")!;
     }
 
-    private drawGrid(): void {
-        const { ctx } = this;
+    #drawGrid(): void {
+        const ctx = this.#ctx;
         ctx.save();
         const [palW, palH] = pal;
-        const [gridOffsetX, gridOffsetY] = this.gridOffset;
+        const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         for (
             let transY = gridOffsetY;
             transY < palH;
-            transY += this.gridSquareSize
+            transY += this.#gridSquareSize
         ) {
             for (
                 let transX = gridOffsetX;
                 transX < palW;
-                transX += this.gridSquareSize
+                transX += this.#gridSquareSize
             ) {
                 ctx.save();
                 ctx.translate(transX, transY);
-                this.drawGridSquare(this.getGridSquareFill(transX, transY));
+                this.#drawGridSquare(this.#getGridSquareFill(transX, transY));
                 ctx.restore();
             }
         }
         ctx.restore();
     }
 
-    private drawLeftColorBar(): void {
-        const { ctx } = this;
+    #drawLeftColorBar(): void {
+        const ctx = this.#ctx;
         ctx.save();
         const colors: [string, string, string, string] = [
             "#3c9a7a",
@@ -181,8 +184,8 @@ export class ProveBildeBakgrunn {
             "#b85a7a",
             "#9d7a1e"
         ];
-        const squareSize = this.gridSquareSize;
-        const [gridOffsetX, gridOffsetY] = this.gridOffset;
+        const squareSize = this.#gridSquareSize;
+        const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         const border = 2;
 
         // Left 1/4:
@@ -234,7 +237,7 @@ export class ProveBildeBakgrunn {
         );
 
         // Draw side "blur" borders
-        ctx.fillStyle = this.edgeColor.lighten;
+        ctx.fillStyle = this.#edgeColor.lighten;
 
         ctx.fillRect(
             gridOffsetX + squareSize * 2 + border / 2,
@@ -263,8 +266,8 @@ export class ProveBildeBakgrunn {
         ctx.restore();
     }
 
-    private drawRightColorBar(): void {
-        const { ctx } = this;
+    #drawRightColorBar(): void {
+        const ctx = this.#ctx;
         ctx.save();
         const colors: [string, string, string, string] = [
             "#577ad6",
@@ -272,8 +275,8 @@ export class ProveBildeBakgrunn {
             "#9d7a1e",
             "#7a64e9"
         ];
-        const squareSize = this.gridSquareSize;
-        const [gridOffsetX, gridOffsetY] = this.gridOffset;
+        const squareSize = this.#gridSquareSize;
+        const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         const border = 2;
 
         // Right 1/4
@@ -325,7 +328,7 @@ export class ProveBildeBakgrunn {
         );
 
         // Draw side "blur" borders
-        ctx.fillStyle = this.edgeColor.lighten;
+        ctx.fillStyle = this.#edgeColor.lighten;
 
         ctx.fillRect(
             gridOffsetX + squareSize * 15 + border / 2,
@@ -355,8 +358,8 @@ export class ProveBildeBakgrunn {
     }
 
     render(): void {
-        this.drawGrid();
-        this.drawLeftColorBar();
-        this.drawRightColorBar();
+        this.#drawGrid();
+        this.#drawLeftColorBar();
+        this.#drawRightColorBar();
     }
 }

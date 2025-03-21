@@ -40,47 +40,54 @@
   // src/provebilde-bakgrunn.ts
   var ProveBildeBakgrunn = class {
     constructor(ctx, edgeColor) {
-      this.gridSquareSize = 42;
-      this.defaultGray = "#7a7a7a";
-      this.gridOffset = [-15, -27];
-      this.edgeColor = edgeColor;
-      this.ctx = ctx;
-      [this.leftGridStripesPattern, this.rightGridStripesPattern] = this.createGridStripePatterns(
+      this.#edgeColor = edgeColor;
+      this.#ctx = ctx;
+      [this.#leftGridStripesPattern, this.#rightGridStripesPattern] = this.#createGridStripePatterns(
         ["#b85a7a", "#3c9a7a"],
         ["#7a64e9", "#7a900b"]
       );
     }
-    get gridSquareColCount() {
+    #ctx;
+    #edgeColor;
+    #gridSquareSize = 42;
+    #leftGridStripesPattern;
+    #rightGridStripesPattern;
+    #defaultGray = "#7a7a7a";
+    #gridOffset = [-15, -27];
+    get #gridSquareColCount() {
       const [w] = pal;
-      const [offsetX] = this.gridOffset;
-      const size = this.gridSquareSize;
+      const [offsetX] = this.#gridOffset;
+      const size = this.#gridSquareSize;
       return Math.ceil((w - offsetX) / size);
     }
-    get gridSquareRowCount() {
+    get #gridSquareRowCount() {
       const [, h] = pal;
-      const [, offsetY] = this.gridOffset;
-      const size = this.gridSquareSize;
+      const [, offsetY] = this.#gridOffset;
+      const size = this.#gridSquareSize;
       return Math.ceil((h - offsetY) / size);
     }
-    drawGridSquare(fillStyle) {
-      const size = this.gridSquareSize;
-      const { ctx } = this;
+    #drawGridSquare(fillStyle) {
+      const size = this.#gridSquareSize;
+      const ctx = this.#ctx;
       ctx.save();
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, size, size);
       ctx.fillStyle = fillStyle;
       ctx.fillRect(1, 1, size - 2, size - 2);
-      ctx.fillStyle = this.edgeColor.lighten;
+      ctx.fillStyle = this.#edgeColor.lighten;
       ctx.fillRect(1, 1, 1, size - 2);
       ctx.fillRect(size - 2, 1, 1, size);
       ctx.restore();
     }
-    getGridSquareFill(...offset) {
-      const [cols, rows] = [this.gridSquareColCount, this.gridSquareRowCount];
+    #getGridSquareFill(...offset) {
+      const [cols, rows] = [
+        this.#gridSquareColCount,
+        this.#gridSquareRowCount
+      ];
       const [x, y] = offset;
-      const [gridOffsetX, gridOffsetY] = this.gridOffset;
-      const horSquareIndex = (x - gridOffsetX) / this.gridSquareSize;
-      const verSquareIndex = (y - gridOffsetY) / this.gridSquareSize;
+      const [gridOffsetX, gridOffsetY] = this.#gridOffset;
+      const horSquareIndex = (x - gridOffsetX) / this.#gridSquareSize;
+      const verSquareIndex = (y - gridOffsetY) / this.#gridSquareSize;
       const isOutsideHorBounds = horSquareIndex === 0 || horSquareIndex >= cols - 1;
       const isOutsideVerBounds = verSquareIndex === 0 || verSquareIndex >= rows - 1;
       const isSecondLeftMostSquare = horSquareIndex === 1;
@@ -93,38 +100,38 @@
         result = isEven ? "#fff" : "#000";
       } else if (isSecondLeftMostSquare) {
         if (isSecondTopMostSquare) {
-          result = this.makeHalfGridStripePattern(
-            this.leftGridStripesPattern,
+          result = this.#makeHalfGridStripePattern(
+            this.#leftGridStripesPattern,
             "top"
           );
         } else if (isSecondBottomMostSquare) {
-          result = this.makeHalfGridStripePattern(
-            this.leftGridStripesPattern,
+          result = this.#makeHalfGridStripePattern(
+            this.#leftGridStripesPattern,
             "bottom"
           );
         } else {
-          result = this.leftGridStripesPattern;
+          result = this.#leftGridStripesPattern;
         }
       } else if (isSecondRightMostSquare) {
         if (isSecondTopMostSquare) {
-          result = this.makeHalfGridStripePattern(
-            this.rightGridStripesPattern,
+          result = this.#makeHalfGridStripePattern(
+            this.#rightGridStripesPattern,
             "top"
           );
         } else if (isSecondBottomMostSquare) {
-          result = this.makeHalfGridStripePattern(
-            this.rightGridStripesPattern,
+          result = this.#makeHalfGridStripePattern(
+            this.#rightGridStripesPattern,
             "bottom"
           );
         } else {
-          result = this.rightGridStripesPattern;
+          result = this.#rightGridStripesPattern;
         }
       } else {
-        result = this.defaultGray;
+        result = this.#defaultGray;
       }
       return result;
     }
-    createGridStripePatterns(...palettes) {
+    #createGridStripePatterns(...palettes) {
       const ctx = createOffscreenCanvasContext(1, 4);
       return palettes.map(([color1, color2]) => {
         ctx.fillStyle = color1;
@@ -134,44 +141,44 @@
         return ctx.createPattern(ctx.canvas, "repeat");
       });
     }
-    makeHalfGridStripePattern(stripePattern, noStripesAt) {
+    #makeHalfGridStripePattern(stripePattern, noStripesAt) {
       const ctx = createOffscreenCanvasContext(
-        this.gridSquareSize,
-        this.gridSquareSize
+        this.#gridSquareSize,
+        this.#gridSquareSize
       );
       ctx.fillStyle = stripePattern;
-      ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize);
-      ctx.fillStyle = this.defaultGray;
+      ctx.fillRect(0, 0, this.#gridSquareSize, this.#gridSquareSize);
+      ctx.fillStyle = this.#defaultGray;
       if (noStripesAt === "top") {
-        ctx.fillRect(0, 0, this.gridSquareSize, this.gridSquareSize / 2);
+        ctx.fillRect(0, 0, this.#gridSquareSize, this.#gridSquareSize / 2);
       } else {
         ctx.fillRect(
           0,
-          this.gridSquareSize / 2,
-          this.gridSquareSize,
-          this.gridSquareSize / 2
+          this.#gridSquareSize / 2,
+          this.#gridSquareSize,
+          this.#gridSquareSize / 2
         );
       }
       ctx.fill();
       return ctx.createPattern(ctx.canvas, "repeat");
     }
-    drawGrid() {
-      const { ctx } = this;
+    #drawGrid() {
+      const ctx = this.#ctx;
       ctx.save();
       const [palW, palH] = pal;
-      const [gridOffsetX, gridOffsetY] = this.gridOffset;
-      for (let transY = gridOffsetY; transY < palH; transY += this.gridSquareSize) {
-        for (let transX = gridOffsetX; transX < palW; transX += this.gridSquareSize) {
+      const [gridOffsetX, gridOffsetY] = this.#gridOffset;
+      for (let transY = gridOffsetY; transY < palH; transY += this.#gridSquareSize) {
+        for (let transX = gridOffsetX; transX < palW; transX += this.#gridSquareSize) {
           ctx.save();
           ctx.translate(transX, transY);
-          this.drawGridSquare(this.getGridSquareFill(transX, transY));
+          this.#drawGridSquare(this.#getGridSquareFill(transX, transY));
           ctx.restore();
         }
       }
       ctx.restore();
     }
-    drawLeftColorBar() {
-      const { ctx } = this;
+    #drawLeftColorBar() {
+      const ctx = this.#ctx;
       ctx.save();
       const colors = [
         "#3c9a7a",
@@ -179,8 +186,8 @@
         "#b85a7a",
         "#9d7a1e"
       ];
-      const squareSize = this.gridSquareSize;
-      const [gridOffsetX, gridOffsetY] = this.gridOffset;
+      const squareSize = this.#gridSquareSize;
+      const [gridOffsetX, gridOffsetY] = this.#gridOffset;
       const border = 2;
       [ctx.fillStyle] = colors;
       ctx.fillRect(
@@ -222,7 +229,7 @@
         squareSize - border / 2,
         squareSize * 2 - border
       );
-      ctx.fillStyle = this.edgeColor.lighten;
+      ctx.fillStyle = this.#edgeColor.lighten;
       ctx.fillRect(
         gridOffsetX + squareSize * 2 + border / 2,
         gridOffsetY + squareSize * 2 + border / 2,
@@ -249,8 +256,8 @@
       );
       ctx.restore();
     }
-    drawRightColorBar() {
-      const { ctx } = this;
+    #drawRightColorBar() {
+      const ctx = this.#ctx;
       ctx.save();
       const colors = [
         "#577ad6",
@@ -258,8 +265,8 @@
         "#9d7a1e",
         "#7a64e9"
       ];
-      const squareSize = this.gridSquareSize;
-      const [gridOffsetX, gridOffsetY] = this.gridOffset;
+      const squareSize = this.#gridSquareSize;
+      const [gridOffsetX, gridOffsetY] = this.#gridOffset;
       const border = 2;
       [ctx.fillStyle] = colors;
       ctx.fillRect(
@@ -301,7 +308,7 @@
         squareSize - border / 2,
         squareSize * 2 - border
       );
-      ctx.fillStyle = this.edgeColor.lighten;
+      ctx.fillStyle = this.#edgeColor.lighten;
       ctx.fillRect(
         gridOffsetX + squareSize * 15 + border / 2,
         gridOffsetY + squareSize * 2 + border / 2,
@@ -329,31 +336,34 @@
       ctx.restore();
     }
     render() {
-      this.drawGrid();
-      this.drawLeftColorBar();
-      this.drawRightColorBar();
+      this.#drawGrid();
+      this.#drawLeftColorBar();
+      this.#drawRightColorBar();
     }
   };
 
   // src/provebilde-sirkel.ts
   var ProveBildeSirkel = class {
     constructor(ctx, edgeColor) {
-      this.edgeColor = edgeColor;
-      this.ctx = ctx;
+      this.#edgeColor = edgeColor;
+      this.#ctx = ctx;
       const [palW, palH] = pal;
       const [fW, fgH] = [84 * 6, 84 * 6];
       const [fgX, fgY] = [palW / 2 - fW / 2, palH / 2 - fgH / 2];
-      this.rect = [fgX, fgY, fW, fgH];
+      this.#rect = [fgX, fgY, fW, fgH];
     }
-    translate(x, y, callback) {
-      const { ctx } = this;
+    #ctx;
+    #edgeColor;
+    #rect;
+    #translate(x, y, callback) {
+      const ctx = this.#ctx;
       ctx.save();
       ctx.translate(x, y);
       const result = callback();
       ctx.restore();
       return result;
     }
-    createGradientPattern(width) {
+    #createGradientPattern(width) {
       const ctx = createOffscreenCanvasContext(width, 1);
       const gradient = ctx.createLinearGradient(0, 0, width, 1);
       gradient.addColorStop(0, "#000");
@@ -363,17 +373,17 @@
       ctx.fillRect(0, 0, width, 1);
       return ctx.createPattern(ctx.canvas, "repeat");
     }
-    renderTopRow() {
-      const { ctx } = this;
-      const [, , fW] = this.rect;
+    #renderTopRow() {
+      const ctx = this.#ctx;
+      const [, , fW] = this.#rect;
       const h = 21;
       ctx.fillStyle = "#fff";
       ctx.fillRect(-fW / 2, 0, fW, h);
       return h;
     }
-    renderHeaderRow() {
-      const { ctx } = this;
-      const [, , fW] = this.rect;
+    #renderHeaderRow() {
+      const ctx = this.#ctx;
+      const [, , fW] = this.#rect;
       const h = 42;
       const w = 168;
       ctx.fillStyle = "#fff";
@@ -382,9 +392,9 @@
       ctx.fillRect(-w / 2, 0, w, h);
       return h;
     }
-    renderReflectionCheckRow(inverse) {
-      const { ctx } = this;
-      const [, , fW] = this.rect;
+    #renderReflectionCheckRow(inverse) {
+      const ctx = this.#ctx;
+      const [, , fW] = this.#rect;
       const h = 42;
       ctx.fillStyle = inverse ? "#000" : "#fff";
       ctx.fillRect(-fW / 2, 0, fW, h);
@@ -397,11 +407,11 @@
       ctx.fillRect(-fW / 2 + 148, 0, 1, h);
       return h;
     }
-    renderSquareWave75Row() {
-      const { ctx } = this;
+    #renderSquareWave75Row() {
+      const ctx = this.#ctx;
       const itemW = 30;
       const h = 42;
-      const [, , fW] = this.rect;
+      const [, , fW] = this.#rect;
       ctx.beginPath();
       ctx.rect(-fW / 2, 0, fW, h);
       ctx.clip();
@@ -412,8 +422,8 @@
       ctx.closePath();
       return h;
     }
-    renderColoBar75Row() {
-      const { ctx } = this;
+    #renderColoBar75Row() {
+      const ctx = this.#ctx;
       const h = 84;
       const itemW = 84;
       const colors = [
@@ -431,9 +441,9 @@
       }
       return h;
     }
-    renderCrossedLines() {
-      const { ctx } = this;
-      const [, , fW] = this.rect;
+    #renderCrossedLines() {
+      const ctx = this.#ctx;
+      const [, , fW] = this.#rect;
       const h = 42;
       const itemW = 42;
       ctx.fillStyle = "#000";
@@ -443,18 +453,18 @@
       for (let x = -itemW * 6.5 - 2; x < itemW * 6.5; x += itemW) {
         ctx.fillRect(x, 0, 4, h);
         ctx.save();
-        ctx.fillStyle = this.edgeColor.darken;
+        ctx.fillStyle = this.#edgeColor.darken;
         ctx.fillRect(x, 0, 1, h);
         ctx.fillRect(x + 3, 0, 1, h);
         ctx.restore();
       }
       return h;
     }
-    renderDefinitionLinesRow() {
-      const { ctx } = this;
+    #renderDefinitionLinesRow() {
+      const ctx = this.#ctx;
       const h = 84;
       const itemW = 84;
-      const [, , fW] = this.rect;
+      const [, , fW] = this.#rect;
       ctx.beginPath();
       ctx.rect(-fW / 2, 0, fW, h);
       ctx.clip();
@@ -462,7 +472,7 @@
       const pixelFactor = 12;
       const squares = ["#000", 0.8, 1.8, 2.8, 3.8, 4.8, "#000"];
       for (const fillInfo of squares) {
-        ctx.fillStyle = typeof fillInfo === "string" ? fillInfo : this.createGradientPattern(pixelFactor / fillInfo);
+        ctx.fillStyle = typeof fillInfo === "string" ? fillInfo : this.#createGradientPattern(pixelFactor / fillInfo);
         ctx.translate(x, 0);
         ctx.fillRect(0, 0, itemW, h);
         ctx.translate(-x, 0);
@@ -471,8 +481,8 @@
       ctx.closePath();
       return h;
     }
-    renderGrayScaleStairCaseRow() {
-      const { ctx } = this;
+    #renderGrayScaleStairCaseRow() {
+      const ctx = this.#ctx;
       const h = 42;
       const itemW = 84;
       let x = -3 * itemW;
@@ -485,11 +495,11 @@
       }
       return h;
     }
-    renderColorStep75Row() {
-      const { ctx } = this;
+    #renderColorStep75Row() {
+      const ctx = this.#ctx;
       const h = 65;
       const itemW = 40;
-      const [, , fW] = this.rect;
+      const [, , fW] = this.#rect;
       ctx.fillStyle = "#bfbf00";
       ctx.fillRect(-fW / 2, 0, fW, h);
       ctx.fillStyle = "rgb(185 25 18)";
@@ -499,14 +509,14 @@
       ctx.fillRect(itemW / 2 - 1, 0, 1, h);
       return h;
     }
-    renderCrossHair() {
-      const { ctx } = this;
+    #renderCrossHair() {
+      const ctx = this.#ctx;
       const h = 42 * 3;
       const itemW = 38;
       ctx.fillStyle = "#000";
       ctx.fillRect(-itemW / 2, 0, itemW, h);
       ctx.save();
-      ctx.fillStyle = this.edgeColor.darken;
+      ctx.fillStyle = this.#edgeColor.darken;
       ctx.fillRect(-itemW / 2 - 1, 0, 1, 42);
       ctx.fillRect(itemW / 2, 0, 1, 42);
       ctx.fillRect(-itemW / 2 - 1, 42 * 2, 1, 42);
@@ -516,37 +526,37 @@
       ctx.fillRect(-itemW / 2, h / 2 - 1, itemW, 2);
       ctx.fillRect(-2, 0, 4, h);
       ctx.save();
-      ctx.fillStyle = this.edgeColor.darken;
+      ctx.fillStyle = this.#edgeColor.darken;
       ctx.fillRect(-2, 0, 1, h);
       ctx.fillRect(1, 0, 1, h);
       ctx.restore();
       return h;
     }
-    renderCompleteForground(y, cX) {
-      const trans = this.translate.bind(this);
-      y += trans(cX, y, () => this.renderTopRow());
-      y += trans(cX, y, () => this.renderHeaderRow());
-      y += trans(cX, y, () => this.renderReflectionCheckRow(false));
-      y += trans(cX, y, () => this.renderSquareWave75Row());
-      y += trans(cX, y, () => this.renderColoBar75Row());
-      y += trans(cX, y, () => this.renderCrossedLines());
-      y += trans(cX, y, () => this.renderDefinitionLinesRow());
-      y += trans(cX, y, () => this.renderGrayScaleStairCaseRow());
-      y += trans(cX, y, () => this.renderReflectionCheckRow(true));
-      trans(cX, y, () => this.renderColorStep75Row());
+    #renderCompleteForground(y, cX) {
+      const trans = this.#translate.bind(this);
+      y += trans(cX, y, () => this.#renderTopRow());
+      y += trans(cX, y, () => this.#renderHeaderRow());
+      y += trans(cX, y, () => this.#renderReflectionCheckRow(false));
+      y += trans(cX, y, () => this.#renderSquareWave75Row());
+      y += trans(cX, y, () => this.#renderColoBar75Row());
+      y += trans(cX, y, () => this.#renderCrossedLines());
+      y += trans(cX, y, () => this.#renderDefinitionLinesRow());
+      y += trans(cX, y, () => this.#renderGrayScaleStairCaseRow());
+      y += trans(cX, y, () => this.#renderReflectionCheckRow(true));
+      trans(cX, y, () => this.#renderColorStep75Row());
       y = pal[1] / 2 - 63;
-      trans(cX, y, () => this.renderCrossHair());
+      trans(cX, y, () => this.#renderCrossHair());
     }
     render() {
       const [palW, palH] = pal;
       const [centerX, centerY] = [palW / 2, palH / 2];
       const radius = 84 * 3;
-      const { ctx } = this;
+      const ctx = this.#ctx;
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.clip();
       const foreGroundYOffset = (palH - radius * 2) / 2;
-      this.renderCompleteForground(foreGroundYOffset, centerX);
+      this.#renderCompleteForground(foreGroundYOffset, centerX);
       ctx.closePath();
     }
   };
@@ -556,104 +566,113 @@
     lighten: "rgb(255 255 255 / 0.666)",
     darken: "rgb(0 0 0 / 0.333)"
   };
-  var ProveBilde = class _ProveBilde {
+  var ProveBilde = class {
     constructor(ctx, options2 = {}) {
-      this.watchTimer = 0;
-      this.headFootHorizontalPadding = 4;
-      this.options = options2;
-      this.ctx = ctx;
+      this.#options = options2;
+      this.#ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
       const edgeColor = options2.noBlurEdges ? { lighten: transp, darken: transp } : defaultEdgeColor;
-      this.background = new ProveBildeBakgrunn(ctx, edgeColor);
-      this.circle = new ProveBildeSirkel(ctx, edgeColor);
+      this.#background = new ProveBildeBakgrunn(ctx, edgeColor);
+      this.#circle = new ProveBildeSirkel(ctx, edgeColor);
       const safari = isSafari(window);
-      this.textVerticalAdjust = safari ? 0 : 2;
-      this.dateTimeHorizontalPadding = safari ? 16 : 8;
+      this.#textVerticalAdjust = safari ? 0 : 2;
     }
-    static setJustifyWordSpacing(ctx, text, maxWidth, allowReduce) {
-      const normalizedText = text.replace(/\s+/gu, " ").trim();
-      const measured = ctx.measureText(normalizedText).width;
-      if (!allowReduce && measured > maxWidth) {
-        return;
-      }
-      const spaceCount = normalizedText.split(" ").length - 1;
-      const spaceWidth = (maxWidth - measured) / spaceCount;
-      ctx.wordSpacing = `${spaceWidth}px`;
-    }
-    static setDefaultFont(ctx) {
+    #options;
+    #ctx;
+    #background;
+    #circle;
+    #headFootHorizontalPadding = 6;
+    #watchTimer = 0;
+    #textVerticalAdjust;
+    // readonly #dateTimeHorizontalPadding: number;;
+    #setDefaultFont() {
+      const ctx = this.#ctx;
       ctx.fillStyle = "#fff";
       ctx.font = "32px Arial, Helvetica, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
     }
-    renderHeaderOrFooterText(text, cX, yOffset) {
-      const { ctx } = this;
+    #fillTextMonoSpaced(...fillArgs) {
+      const ctx = this.#ctx;
+      ctx.save();
+      const [text, x, y, maxWidth] = fillArgs;
+      const charWidth = maxWidth / text.length;
+      const currX = x - text.length * charWidth / 2;
+      ctx.translate(maxWidth / 2 - 3, 0);
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        ctx.translate(charWidth, 0);
+        ctx.fillText(char, currX, y + this.#textVerticalAdjust, charWidth);
+      }
+      ctx.restore();
+    }
+    #renderHeaderOrFooterText(text, cX, yOffset) {
+      const ctx = this.#ctx;
       const [headerW, headerH] = [168, 42];
       ctx.save();
-      ctx.translate(cX, yOffset + headerH / 2 + this.textVerticalAdjust);
-      _ProveBilde.setDefaultFont(ctx);
+      ctx.translate(cX, yOffset + headerH / 2 + this.#textVerticalAdjust);
+      this.#setDefaultFont();
       ctx.fillText(
         text.toUpperCase(),
         0,
         0,
-        headerW - this.headFootHorizontalPadding * 2
+        headerW - this.#headFootHorizontalPadding * 2
       );
       ctx.restore();
     }
-    renderTime(dt, format, cX) {
-      const { ctx } = this;
+    #renderTime(dt, format, cX) {
+      const ctx = this.#ctx;
       ctx.save();
       const [w, h] = [164, 42];
       const [, palH] = pal;
       const cY = palH / 2;
       ctx.fillStyle = "#000";
       ctx.fillRect(cX, cY - h / 2, w, h);
-      _ProveBilde.setDefaultFont(ctx);
+      this.#setDefaultFont();
       const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1e3] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
-      const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? " - " : " : ");
-      _ProveBilde.setJustifyWordSpacing(
-        ctx,
+      const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? "-" : ":");
+      this.#fillTextMonoSpaced(
         formatted,
-        w - this.dateTimeHorizontalPadding * 2,
-        true
+        cX,
+        cY,
+        w - this.#headFootHorizontalPadding * 2
       );
-      ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
       ctx.restore();
     }
     stopWatch() {
-      if (this.watchTimer !== null) {
-        clearInterval(this.watchTimer);
-        this.watchTimer = null;
+      if (this.#watchTimer !== null) {
+        clearInterval(this.#watchTimer);
+        this.#watchTimer = null;
       }
     }
     startWatch() {
       const renderDateAndTime = () => {
         const dt = /* @__PURE__ */ new Date();
-        if (this.options.showDate) {
-          this.renderTime(dt, "date", 155);
+        if (this.#options.showDate) {
+          this.#renderTime(dt, "date", 155);
         }
-        if (this.options.showTime) {
-          this.renderTime(dt, "time", 449);
+        if (this.#options.showTime) {
+          this.#renderTime(dt, "time", 449);
         }
       };
       renderDateAndTime();
       this.stopWatch();
-      this.watchTimer = setInterval(renderDateAndTime, 500);
+      this.#watchTimer = setInterval(renderDateAndTime, 500);
     }
     start() {
-      const { ctx } = this;
+      const ctx = this.#ctx;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
-      this.background.render();
-      this.circle.render();
+      this.#background.render();
+      this.#circle.render();
       const [palW, palH] = pal;
       const [centerX] = [palW / 2, palH / 2];
-      const o = this.options;
+      const o = this.#options;
       if (o.headerText) {
-        this.renderHeaderOrFooterText(o.headerText, centerX, 57);
+        this.#renderHeaderOrFooterText(o.headerText, centerX, 57);
       }
       if (o.footerText) {
-        this.renderHeaderOrFooterText(o.footerText, centerX, 436);
+        this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
       }
       if (o.showDate || o.showTime) {
         this.startWatch();
