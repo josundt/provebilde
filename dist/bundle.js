@@ -686,8 +686,8 @@
 
   // src/index.ts
   var options = {
-    headerText: "J\xF8rn A",
-    footerText: "Sundt",
+    headerText: "jasMIN",
+    footerText: "Retro TV",
     showDate: true,
     showTime: true,
     noBlurEdges: false

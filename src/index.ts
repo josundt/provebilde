@@ -3,8 +3,8 @@ import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
 import { debounce } from "./utils.ts";
 
 const options: ProveBildeOptions = {
-    headerText: "Jørn A",
-    footerText: "Sundt",
+    headerText: "jasMIN",
+    footerText: "Retro TV",
     showDate: true,
     showTime: true,
     noBlurEdges: false
