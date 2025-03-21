@@ -33,6 +33,9 @@
     }
     return result;
   }
+  function isSafari(win) {
+    return window.navigator.userAgent.includes("Mac OS X") && window.navigator.userAgent.includes("Safari");
+  }
 
   // src/provebilde-bakgrunn.ts
   var ProveBildeBakgrunn = class {
@@ -690,6 +693,7 @@
     ctx.scale(scale, scale);
     proveBilde = new ProveBilde(ctx, options);
     document.writeln(window.navigator.userAgent);
+    document.writeln(`Safari: ${isSafari(window).toString()}`);
   }
   var debouncedInit = debounce(init, 400);
   document.addEventListener("DOMContentLoaded", () => {

@@ -44,3 +44,10 @@ export function createOffscreenCanvasContext(
     }
     return result;
 }
+
+export function isSafari(win: Window): boolean {
+    return (
+        window.navigator.userAgent.includes("Mac OS X") &&
+        window.navigator.userAgent.includes("Safari")
+    );
+}
