@@ -568,7 +568,20 @@
       this.textTimeSeparatorSpacing = isSafari ? [-20, -20] : [-5, -3];
     }
     get isSafari() {
-      return navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome");
+      const ua = window.navigator.userAgent;
+      const iOS = /iP(ad|od|hone)/iu.test(ua);
+      const hasSafariInUa = /Safari/iu.test(ua);
+      const noOtherBrowsersInUa = !/Chrome|CriOS|OPiOS|mercury|FxiOS|Firefox/iu.test(ua);
+      let result;
+      if (iOS) {
+        const webkit = !!/WebKit/iu.test(ua);
+        result = webkit && hasSafariInUa && noOtherBrowsersInUa;
+      } else if ("safari" in window) {
+        result = true;
+      } else {
+        result = hasSafariInUa && noOtherBrowsersInUa;
+      }
+      return result;
     }
     static setDefaultFont(ctx) {
       ctx.fillStyle = "#fff";
