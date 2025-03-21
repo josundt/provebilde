@@ -30,16 +30,6 @@ export class ProveBilde {
             : defaultEdgeColor;
         this.background = new ProveBildeBakgrunn(ctx, edgeColor);
         this.circle = new ProveBildeSirkel(ctx, edgeColor);
-        const { isSafari } = this;
-        this.textVerticalAdjust = isSafari ? 0 : 2;
-        this.textTimeSeparatorSpacing = isSafari ? [-20, -20] : [-5, -3];
-    }
-
-    private get isSafari(): boolean {
-        const ua = window.navigator.userAgent;
-        const iOs = /iP(ad|od|hone)/iu.test(ua);
-        const mac = /Macintosh/iu.test(ua);
-        return iOs || mac;
     }
 
     private readonly options: ProveBildeOptions;
@@ -48,26 +38,50 @@ export class ProveBilde {
     private readonly circle: ProveBildeSirkel;
     private watchTimer: number | null = 0;
     private readonly textVerticalAdjust: number = 2;
-    private readonly textTimeSeparatorSpacing: readonly [
-        dateSpacing: number,
-        timeSpacing: number
-    ];
+    private readonly textHorizontalPadding: number = 4;
+
+    private static setJustifyWordSpacing(
+        ctx: CanvasRenderingContext2D,
+        text: string,
+        maxWidth: number,
+        allowReduce: boolean
+    ): void {
+        const normalizedText = text.replace(/\s+/gu, " ").trim();
+        const measured = ctx.measureText(normalizedText).width;
+
+        if (!allowReduce && measured > maxWidth) {
+            return;
+        }
+
+        const spaceCount = normalizedText.split(" ").length - 1;
+        const spaceWidth = (maxWidth - measured) / spaceCount;
+        ctx.wordSpacing = `${spaceWidth}px`;
+    }
 
     private static setDefaultFont(ctx: CanvasRenderingContext2D): void {
         ctx.fillStyle = "#fff";
-        ctx.font = "32px Arial";
+        ctx.font = "32px Arial, Helvetica, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
     }
 
-    private renderLogoText(text: string, cX: number, yOffset: number): void {
+    private renderHeaderOrFooterText(
+        text: string,
+        cX: number,
+        yOffset: number
+    ): void {
         const { ctx } = this;
         const [headerW, headerH] = [168, 42];
 
         ctx.save();
         ctx.translate(cX, yOffset + headerH / 2 + this.textVerticalAdjust);
         ProveBilde.setDefaultFont(ctx);
-        ctx.fillText(text.toUpperCase(), 0, 0, headerW - 8);
+        ctx.fillText(
+            text.toUpperCase(),
+            0,
+            0,
+            headerW - this.textHorizontalPadding * 2
+        );
 
         ctx.restore();
     }
@@ -82,9 +96,9 @@ export class ProveBilde {
         ctx.fillStyle = "#000";
         ctx.fillRect(cX, cY - h / 2, w, h);
         ProveBilde.setDefaultFont(ctx);
-        const wordspacing =
-            this.textTimeSeparatorSpacing[format === "date" ? 0 : 1];
-        ctx.wordSpacing = `${wordspacing}px`;
+        // const wordspacing =
+        //     this.textTimeSeparatorSpacing[format === "date" ? 0 : 1];
+        // ctx.wordSpacing = `${wordspacing}px`;
         const textParts =
             format === "date"
                 ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1_000]
@@ -93,6 +107,8 @@ export class ProveBilde {
         const formatted = textParts
             .map(p => p.toString().padStart(2, "0"))
             .join(format === "date" ? " - " : " : ");
+
+        ProveBilde.setJustifyWordSpacing(ctx, formatted, w - 16, true);
 
         ctx.fillText(formatted, cX + w / 2, cY + this.textVerticalAdjust);
 
@@ -137,10 +153,10 @@ export class ProveBilde {
 
         const o = this.options;
         if (o.headerText) {
-            this.renderLogoText(o.headerText, centerX, 57);
+            this.renderHeaderOrFooterText(o.headerText, centerX, 57);
         }
         if (o.footerText) {
-            this.renderLogoText(o.footerText, centerX, 436);
+            this.renderHeaderOrFooterText(o.footerText, centerX, 436);
         }
 
         if (o.showDate || o.showTime) {
