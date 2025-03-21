@@ -1,0 +1,22 @@
+{
+  "name": "provebilde",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json --noemit",
+    "build": "esbuild --bundle src/index.ts --outfile=dist/bundle.js --sourcemap --platform=browser",
+    "watch": "npm run build -- --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@josundt/eslint-config": "5.8.0",
+    "@josundt/tsconfig-rules": "5.8.1",
+    "esbuild": "0.25.1",
+    "typescript": "5.8.2"
+  }
+}

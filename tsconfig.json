@@ -1,0 +1,8 @@
+{
+  "extends": "@josundt/tsconfig-rules/tsconfig.base.web.nodenext.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["./src/**/*.ts"]
+}
