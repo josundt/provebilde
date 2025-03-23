@@ -11,6 +11,7 @@ export interface ProveBildeOptions {
     showDate?: boolean;
     showTime?: boolean;
     imageSmootingDisabled?: boolean;
+    date?: Date;
 }
 
 export const defaultEdgeColor: EdgeColor = {
@@ -104,7 +105,7 @@ export class ProveBilde {
         this.#setDefaultFont();
         const textParts =
             format === "date"
-                ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1_000]
+                ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 100]
                 : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
 
         const formatted = textParts
@@ -129,8 +130,12 @@ export class ProveBilde {
     }
 
     startWatch(): void {
+        const timeDelta = !this.#options.date
+            ? 0
+            : Date.now() - this.#options.date.getTime();
+
         const renderDateAndTime = (): void => {
-            const dt = new Date();
+            const dt = new Date(Date.now() - timeDelta);
             if (this.#options.showDate) {
                 this.#renderTime(dt, "date", 155);
             }

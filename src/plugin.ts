@@ -3,7 +3,8 @@ import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
 import { debounce, toggleFullScreen } from "./utils.ts";
 
 export interface ProveBildePluginOptions extends ProveBildeOptions {
-    containerSelector: string;
+    /** selector string or element */
+    container: string | HTMLElement;
 }
 
 let proveBilde: ProveBilde;
@@ -32,9 +33,12 @@ function start(): void {
 
 const debouncedStart = debounce(start, 100);
 
-export function initPlugin(o: ProveBildePluginOptions): void {
+export function initPlugin(o: ProveBildePluginOptions): HTMLCanvasElement {
     options = o;
-    const container = document.querySelector(options.containerSelector)!;
+    const container =
+        typeof options.container === "string"
+            ? document.querySelector(options.container)!
+            : options.container;
     canvas = document.createElement("canvas");
     container?.appendChild(canvas);
     canvas.addEventListener("click", e =>
@@ -43,4 +47,5 @@ export function initPlugin(o: ProveBildePluginOptions): void {
     const resizeObserver = new ResizeObserver(debouncedStart);
     resizeObserver.observe(container);
     start();
+    return canvas;
 }

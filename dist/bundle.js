@@ -64,9 +64,9 @@
     }
     #ctx;
     #edgeColor;
-    #gridSquareSize = 42;
     #leftGridStripesPattern;
     #rightGridStripesPattern;
+    #gridSquareSize = 42;
     #defaultGray = "#7a7a7a";
     #gridOffset = [-15, -27];
     get #gridSquareColCount() {
@@ -598,10 +598,9 @@
     #ctx;
     #background;
     #circle;
+    #textVerticalAdjust;
     #headFootHorizontalPadding = 6;
     #watchTimer = 0;
-    #textVerticalAdjust;
-    // readonly #dateTimeHorizontalPadding: number;;
     #setDefaultFont() {
       const ctx = this.#ctx;
       ctx.fillStyle = "#fff";
@@ -646,7 +645,7 @@
       ctx.fillStyle = "#000";
       ctx.fillRect(cX, cY - h / 2, w, h);
       this.#setDefaultFont();
-      const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 1e3] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
+      const textParts = format === "date" ? [dt.getDate(), dt.getMonth() + 1, dt.getFullYear() % 100] : [dt.getHours(), dt.getMinutes(), dt.getSeconds()];
       const formatted = textParts.map((p) => p.toString().padStart(2, "0")).join(format === "date" ? "-" : ":");
       this.#fillTextMonoSpaced(
         formatted,
@@ -663,8 +662,9 @@
       }
     }
     startWatch() {
+      const timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
       const renderDateAndTime = () => {
-        const dt = /* @__PURE__ */ new Date();
+        const dt = new Date(Date.now() - timeDelta);
         if (this.#options.showDate) {
           this.#renderTime(dt, "date", 155);
         }
@@ -729,7 +729,7 @@
   var debouncedStart = debounce(start, 100);
   function initPlugin(o) {
     options = o;
-    const container = document.querySelector(options.containerSelector);
+    const container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
     canvas = document.createElement("canvas");
     container?.appendChild(canvas);
     canvas.addEventListener(
@@ -739,18 +739,453 @@
     const resizeObserver = new ResizeObserver(debouncedStart);
     resizeObserver.observe(container);
     start();
+    return canvas;
+  }
+
+  // src/webgl/shaders/fragment/provebilde-combined.ts
+  var provebildeCombinedFragmentShader = `
+    precision highp float;
+    varying vec2 texCoords;
+    uniform sampler2D textureSampler;
+
+    uniform float brightness;
+    uniform float contrast;
+    uniform float saturation;
+
+    uniform float vignette_size;
+    uniform float vignette_amount;
+
+    uniform vec2  bulgepinch_texSize;
+    uniform float bulgepinch_radius;
+    uniform float bulgepinch_strength;
+    uniform vec2  bulgepinch_center;
+
+
+
+    vec3 adjustBrightness(vec3 color, float brightness) {
+        return color + brightness;
+    }
+
+    vec3 adjustContrast(vec3 color, float contrast) {
+        return 0.5 + (contrast + 1.0) * (color.rgb - 0.5);
+    }
+
+    vec3 adjustSaturation(vec3 color, float saturation) {
+        // WCAG 2.1 relative luminance base
+        const vec3 luminanceWeighting = vec3(0.2126, 0.7152, 0.0722);
+        vec3 grayscaleColor = vec3(dot(color, luminanceWeighting));
+        return mix(grayscaleColor, color, 1.0 + saturation);
+    }
+
+    vec3 vignette(vec3 color, float size, float amount) {
+        float dist = distance(texCoords, vec2(0.5, 0.5));
+        return color * smoothstep(0.8, size * 0.799, dist * (amount + size));
+    }
+
+
+    void main() {
+        vec2 coord = texCoords * bulgepinch_texSize;
+        coord -= bulgepinch_center;
+        float distance = length(coord);
+        if (distance < bulgepinch_radius) {
+            float percent = distance / bulgepinch_radius;
+            if (bulgepinch_strength > 0.0) {
+                coord *= mix(1.0, smoothstep(0.0, bulgepinch_radius / distance, percent), bulgepinch_strength * 0.75);
+            } else {
+                coord *= mix(1.0, pow(percent, 1.0 + bulgepinch_strength * 0.75) * bulgepinch_radius / distance, 1.0 - percent);
+            }
+        }
+        coord += bulgepinch_center;
+
+
+        vec4 color = texture2D(textureSampler, coord / bulgepinch_texSize);
+
+        color.rgb = adjustBrightness(color.rgb, brightness);
+        color.rgb = adjustSaturation(color.rgb, saturation);
+        color.rgb = adjustContrast(color.rgb, contrast);
+        color.rgb = vignette(color.rgb, vignette_size, vignette_amount);
+
+        gl_FragColor = color;
+
+        vec2 clampedCoord = clamp(coord, vec2(0.0), bulgepinch_texSize);
+        if (coord != clampedCoord) {
+            /* fade to transparent if we are outside the image */
+            gl_FragColor.a *= max(0.0, 1.0 - length(coord - clampedCoord));
+        }
+
+
+    }
+`;
+
+  // src/webgl/shaders/vertex/base-flipped.ts
+  var baseVertexShaderFlipped = `
+  attribute vec2 position;
+  varying vec2 texCoords;
+
+  void main() {
+    texCoords = (position + 1.0) / 2.0;
+
+    ////////////////////////////////////////
+    // FLIP: UNCOMMENT LINE BELOW TO FLIP //
+    ////////////////////////////////////////
+    texCoords.y = 1.0 - texCoords.y;
+
+    gl_Position = vec4(position, 0, 1.0);
+  }
+`;
+
+  // src/webgl/webgl-util.ts
+  var WebGLUtil = class {
+    static createProgram(gl, ...shaders) {
+      const program = gl.createProgram();
+      for (const shader of shaders) {
+        gl.attachShader(program, shader);
+      }
+      gl.linkProgram(program);
+      return program;
+    }
+    static setImageTexture(gl, image) {
+      const texture = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        image
+      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    }
+    static #compileShader(gl, shaderSource, type) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, shaderSource);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader)?.replace(/[\u0000]/u, "") ?? ""?.trim();
+        const logMessages = log.split(/\r?\n/u).filter((s) => !!s);
+        const lastMessage = !logMessages.length ? "no message" : logMessages[logMessages.length - 1];
+        throw new Error(
+          `Shader failed to compile: ${lastMessage ?? "no message"}`
+        );
+      }
+      return shader;
+    }
+    static compileVertexShaders(gl, ...shaderSources) {
+      return shaderSources.map(
+        (source) => this.#compileShader(gl, source, gl.VERTEX_SHADER)
+      );
+    }
+    static compileFragmentShaders(gl, ...shaderSources) {
+      return shaderSources.map(
+        (source) => this.#compileShader(gl, source, gl.FRAGMENT_SHADER)
+      );
+    }
+    static clamp(minValue, value, maxValue) {
+      return Math.min(Math.max(value, minValue), maxValue);
+    }
+  };
+
+  // src/webgl/webgl-renderer.ts
+  var WebGLRenderer = class _WebGLRenderer {
+    constructor(canvas2 = document.createElement("canvas"), logger = console) {
+      const gl = canvas2.getContext("webgl");
+      if (!gl) {
+        throw new Error("WebGL not supported");
+      }
+      this.#gl = gl;
+      this.#logger = logger;
+    }
+    #gl;
+    #logger;
+    #initialized = false;
+    // eslint-disable-next-line no-unused-private-class-members
+    #currentProgram = null;
+    #programUniformLocations = /* @__PURE__ */ new Map();
+    #useProgram(program) {
+      const gl = this.#gl;
+      gl.useProgram(program);
+      this.#currentProgram = program;
+    }
+    static #getUniforms(gl, program) {
+      const result = /* @__PURE__ */ new Map();
+      const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+      for (let i = 0; i < numUniforms; i++) {
+        const info = gl.getActiveUniform(program, i);
+        if (info === null) {
+          throw new Error(`Couldn't get uniform at index: ${i}.`);
+        }
+        const location = gl.getUniformLocation(program, info.name);
+        if (location) {
+          result.set(info.name, [info.type, location]);
+        }
+      }
+      return result;
+    }
+    // eslint-disable-next-line complexity
+    #setUniform(name, value) {
+      const gl = this.#gl;
+      const [type, location] = this.#programUniformLocations.get(name) ?? [void 0, void 0];
+      const getTypeAndLengthDesc = (t, length) => `${t}${length ? `[${length}]` : ""}`;
+      const logWrongType = (nm, glEnumName, expectedType, actualType, expectedLength, actualLength) => this.#logger.warn(
+        `Wrong type for uniform '${nm}' (${glEnumName})  Expected: ${getTypeAndLengthDesc(expectedType, expectedLength)}, Actual: ${getTypeAndLengthDesc(actualType, actualLength)}`
+      );
+      const tryEnsureTypedArray = (arr, convert) => {
+        if (arr instanceof Float32Array || arr instanceof Int32Array) {
+          return arr;
+        }
+        return Array.isArray(arr) ? convert(arr) : arr;
+      };
+      switch (type) {
+        case void 0: {
+          this.#logger.warn(`Unknown uniform name: ${name}`);
+          break;
+        }
+        case gl.FLOAT: {
+          if (typeof value !== "number") {
+            logWrongType(name, "FLOAT", "number", typeof value);
+            break;
+          }
+          gl.uniform1fv(location, [value]);
+          break;
+        }
+        case gl.FLOAT_VEC2: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Float32Array(a)
+          );
+          if (!(nValue instanceof Float32Array) || nValue.length !== 2) {
+            logWrongType(
+              name,
+              "FLOAT_VEC2",
+              "Float32Array",
+              typeof nValue,
+              2,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform2fv(location, nValue);
+          break;
+        }
+        case gl.FLOAT_VEC3: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Float32Array(a)
+          );
+          if (!(nValue instanceof Float32Array) || nValue.length !== 3) {
+            logWrongType(
+              name,
+              "FLOAT_VEC3",
+              "Float32Array",
+              typeof nValue,
+              3,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform3fv(location, nValue);
+          break;
+        }
+        case gl.FLOAT_VEC4: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Float32Array(a)
+          );
+          if (!(nValue instanceof Float32Array) || nValue.length !== 4) {
+            logWrongType(
+              name,
+              "FLOAT_VEC4",
+              "Float32Array",
+              typeof nValue,
+              4,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform4fv(location, nValue);
+          break;
+        }
+        case gl.BOOL:
+        case gl.INT: {
+          if (typeof value !== "number") {
+            logWrongType(
+              name,
+              type === gl.BOOL ? "BOOL" : "INT",
+              "number",
+              typeof value
+            );
+            break;
+          }
+          gl.uniform1iv(location, [value]);
+          break;
+        }
+        case gl.BOOL_VEC2:
+        case gl.INT_VEC2: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Int32Array(a)
+          );
+          if (!(nValue instanceof Int32Array) || nValue.length !== 2) {
+            logWrongType(
+              name,
+              type === gl.BOOL_VEC2 ? "BOOL_VEC2" : "INT_VEC2",
+              "Int32Array",
+              typeof nValue,
+              2,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform2iv(location, nValue);
+          break;
+        }
+        case gl.BOOL_VEC3:
+        case gl.INT_VEC3: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Int32Array(a)
+          );
+          if (!(nValue instanceof Int32Array) || nValue.length !== 3) {
+            logWrongType(
+              name,
+              type === gl.BOOL_VEC3 ? "BOOL_VEC3" : "INT_VEC3",
+              "Int32Array",
+              typeof nValue,
+              3,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform3iv(location, nValue);
+          break;
+        }
+        case gl.BOOL_VEC4:
+        case gl.INT_VEC4: {
+          const nValue = tryEnsureTypedArray(
+            value,
+            (a) => new Int32Array(a)
+          );
+          if (!(nValue instanceof Int32Array) || nValue.length !== 4) {
+            logWrongType(
+              name,
+              type === gl.BOOL_VEC4 ? "BOOL_VEC4" : "INT_VEC4",
+              "Int32Array",
+              typeof nValue,
+              4,
+              typeof nValue === "object" && "length" in nValue ? nValue.length : void 0
+            );
+            break;
+          }
+          gl.uniform4iv(location, nValue);
+          break;
+        }
+        default: {
+          this.#logger.warn(`Unknown uniform type: ${type}`);
+        }
+      }
+    }
+    #initialize() {
+      if (this.#initialized) {
+        return;
+      }
+      const gl = this.#gl;
+      const vertexShaders = WebGLUtil.compileVertexShaders(
+        gl,
+        baseVertexShaderFlipped
+      );
+      const fragmentShaders = WebGLUtil.compileFragmentShaders(
+        gl,
+        // brightnessSaturationContrastFragmentShader
+        // vignetteFragmentShader
+        //bulgePinchFragmentShader
+        provebildeCombinedFragmentShader
+      );
+      const program = WebGLUtil.createProgram(
+        gl,
+        ...vertexShaders,
+        ...fragmentShaders
+      );
+      this.#useProgram(program);
+      this.#programUniformLocations = _WebGLRenderer.#getUniforms(gl, program);
+      const vertices = new Float32Array([
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        -1
+      ]);
+      const vertexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      const positionLocation = gl.getAttribLocation(program, "position");
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(positionLocation);
+      this.#initialized = true;
+    }
+    renderImage(image) {
+      if (!this.#initialized) {
+        this.#initialize();
+      }
+      const gl = this.#gl;
+      const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
+      gl.viewport(0, 0, w, h);
+      WebGLUtil.setImageTexture(gl, image);
+      this.#setUniform("brightness", 0);
+      this.#setUniform("saturation", -0.7);
+      this.#setUniform("contrast", 0.3);
+      this.#setUniform("vignette_size", 0.25);
+      this.#setUniform("vignette_amount", 0.58);
+      this.#setUniform("bulgepinch_texSize", [w, h]);
+      this.#setUniform("bulgepinch_center", [w / 2, h / 2]);
+      this.#setUniform("bulgepinch_radius", w * 0.75);
+      this.#setUniform("bulgepinch_strength", 0.07);
+      gl.clearColor(1, 1, 1, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+  };
+
+  // src/webgl-crt-filter.ts
+  function useWebGlCrtFilter(source) {
+    const glcanvas = document.createElement("canvas");
+    glcanvas.width = source.width;
+    glcanvas.height = source.height;
+    source.parentNode.insertBefore(glcanvas, source);
+    source.style.display = "none";
+    const glUtil = new WebGLRenderer(glcanvas);
+    const go = () => {
+      glUtil.renderImage(source);
+      requestAnimationFrame(go);
+    };
+    setInterval(go, 500);
   }
 
   // src/index.ts
   var options2 = {
-    containerSelector: "body",
+    container: document.body,
     headerText: "jasMIN",
     footerText: "Retro TV",
     showDate: true,
     showTime: true,
+    // date: new Date(1985, 4, 12, 1, 23, 35),
     blurredEdgesDisabled: false,
     imageSmootingDisabled: false
   };
-  document.addEventListener("DOMContentLoaded", () => initPlugin(options2));
+  document.addEventListener("DOMContentLoaded", () => {
+    const canvas2 = initPlugin(options2);
+    useWebGlCrtFilter(canvas2);
+  });
 })();
 //# sourceMappingURL=bundle.js.map
