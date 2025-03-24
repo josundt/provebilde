@@ -11,9 +11,35 @@ export class WebGLUtil {
         return program;
     }
 
+    /**
+      Bind the active array buffer.
+     * @param gl The WebGLRenderingContext
+     * @param program The WebGLProgram
+     * @param vertices The array to bind
+     */
+    static setBufferAndSetPositionAttribute(
+        gl: WebGLRenderingContext,
+        program: WebGLProgram,
+        vertices: Float32Array
+    ): void {
+        // Bind the active array buffer.
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        // Set and enable our array buffer as the program's "position" variable
+        const positionLocation = gl.getAttribLocation(program!, "position");
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLocation);
+    }
+
     static setImageTexture(
         gl: WebGLRenderingContext,
-        image: ImageData | HTMLImageElement | HTMLCanvasElement
+        image:
+            | ImageData
+            | HTMLImageElement
+            | HTMLCanvasElement
+            | OffscreenCanvas
     ): void {
         const texture = gl.createTexture();
         gl.activeTexture(gl.TEXTURE0);
@@ -61,13 +87,18 @@ export class WebGLUtil {
         return shader;
     }
 
-    static compileVertexShaders(
+    static compileVertexShader(
         gl: WebGLRenderingContext,
-        ...shaderSources: string[]
-    ): WebGLShader[] {
-        return shaderSources.map(source =>
-            this.#compileShader(gl, source, gl.VERTEX_SHADER)
-        );
+        shaderSource: string
+    ): WebGLShader {
+        return this.#compileShader(gl, shaderSource, gl.VERTEX_SHADER);
+    }
+
+    static compileFragmentShader(
+        gl: WebGLRenderingContext,
+        shaderSource: string
+    ): WebGLShader {
+        return this.#compileShader(gl, shaderSource, gl.FRAGMENT_SHADER);
     }
 
     static compileFragmentShaders(
@@ -75,7 +106,7 @@ export class WebGLUtil {
         ...shaderSources: string[]
     ): WebGLShader[] {
         return shaderSources.map(source =>
-            this.#compileShader(gl, source, gl.FRAGMENT_SHADER)
+            this.compileFragmentShader(gl, source)
         );
     }
 

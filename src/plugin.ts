@@ -33,12 +33,14 @@ function start(): void {
 
 const debouncedStart = debounce(start, 100);
 
-export function initPlugin(o: ProveBildePluginOptions): HTMLCanvasElement {
+export function initPlugin(o: ProveBildePluginOptions): void {
     options = o;
     const container =
         typeof options.container === "string"
             ? document.querySelector(options.container)!
             : options.container;
+
+    container.innerHTML = "";
     canvas = document.createElement("canvas");
     container?.appendChild(canvas);
     canvas.addEventListener("click", e =>
@@ -47,5 +49,4 @@ export function initPlugin(o: ProveBildePluginOptions): HTMLCanvasElement {
     const resizeObserver = new ResizeObserver(debouncedStart);
     resizeObserver.observe(container);
     start();
-    return canvas;
 }

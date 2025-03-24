@@ -1,6 +1,7 @@
 import type { UniformValue, WebGLConstant } from "./abstractions.ts";
+import type { IFilter } from "./filters/abstractions.ts";
+import { FilterBase } from "./filters/filter-base.ts";
 import type { ILogger } from "./logger.ts";
-import { provebildeCombinedFragmentShader } from "./shaders/fragment/provebilde-combined.ts";
 import { baseVertexShaderFlipped } from "./shaders/vertex/base-flipped.ts";
 import { WebGLUtil } from "./webgl-util.ts";
 
@@ -13,28 +14,41 @@ type TypeLocationInfo = [type: number, location: WebGLUniformLocation];
 export class WebGLRenderer {
     constructor(
         canvas: HTMLCanvasElement = document.createElement("canvas"),
-        logger: ILogger = console
+        ...filters: IFilter[]
     ) {
         const gl = canvas.getContext("webgl");
         if (!gl) {
             throw new Error("WebGL not supported");
         }
+
+        // Ensure we use base fragment shader if no filters are provided
+        if (!filters.length) {
+            filters.push(new FilterBase());
+        }
+
         this.#gl = gl;
-        this.#logger = logger;
+        this.#logger = console;
+        this.#filters = filters;
     }
 
     readonly #gl: WebGLRenderingContext;
+    readonly #filters: IFilter[];
     readonly #logger: ILogger;
 
-    #initialized: boolean = false;
-    // eslint-disable-next-line no-unused-private-class-members
     #currentProgram: WebGLProgram | null = null;
+    readonly #vertices: Float32Array = new Float32Array([
+        -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1
+    ]);
+    #vertexShader: WebGLShader | null = null;
+
     #programUniformLocations: Map<string, TypeLocationInfo> = new Map();
 
-    #useProgram(program: WebGLProgram): void {
+    #useProgram(program: WebGLProgram): WebGLProgram {
         const gl = this.#gl;
         gl.useProgram(program);
         this.#currentProgram = program;
+        this.#programUniformLocations = WebGLRenderer.#getUniforms(gl, program);
+        return this.#currentProgram;
     }
 
     static #getUniforms(
@@ -254,60 +268,22 @@ export class WebGLRenderer {
         }
     }
 
-    #initialize(): void {
-        if (this.#initialized) {
-            return;
+    #getVertexShader(): WebGLShader {
+        if (this.#vertexShader) {
+            return this.#vertexShader;
         }
 
-        const gl = this.#gl;
-
-        // Create the vertex shader
-        const vertexShaders = WebGLUtil.compileVertexShaders(
-            gl,
+        const vertexShader = WebGLUtil.compileVertexShader(
+            this.#gl,
             baseVertexShaderFlipped
         );
 
-        // Create our fragment shader
-        const fragmentShaders = WebGLUtil.compileFragmentShaders(
-            gl,
-            // brightnessSaturationContrastFragmentShader
-            // vignetteFragmentShader
-            //bulgePinchFragmentShader
-            provebildeCombinedFragmentShader
-        );
-
-        // Create our program
-        const program = WebGLUtil.createProgram(
-            gl,
-            ...vertexShaders,
-            ...fragmentShaders
-        );
-
-        // Enable the program
-        this.#useProgram(program);
-
-        this.#programUniformLocations = WebGLRenderer.#getUniforms(gl, program);
-
-        // Bind VERTICES as the active array buffer.
-        const vertices = new Float32Array([
-            -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1
-        ]);
-        const vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        // Set and enable our array buffer as the program's "position" variable
-        const positionLocation = gl.getAttribLocation(program, "position");
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionLocation);
-
-        this.#initialized = true;
+        return (this.#vertexShader = vertexShader);
     }
 
-    renderImage(image: HTMLImageElement | HTMLCanvasElement): void {
-        if (!this.#initialized) {
-            this.#initialize();
-        }
+    renderImage(
+        image: HTMLImageElement | HTMLCanvasElement | OffscreenCanvas
+    ): void {
         const gl = this.#gl;
 
         const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
@@ -315,29 +291,35 @@ export class WebGLRenderer {
         // Set the viewport to cover the canvas
         gl.viewport(0, 0, w, h);
 
-        // Create a texture
-        WebGLUtil.setImageTexture(gl, image);
+        const vertexShader = this.#getVertexShader();
 
-        // Load uniforms (parameters) for the fragment shaders
+        for (const filter of this.#filters) {
+            // Enable the program
+            const program = this.#useProgram(
+                filter.getProgram(gl, vertexShader)
+            );
 
-        // BrightnessSaturationContrast fragment shader uniforms
-        this.#setUniform("brightness", 0);
-        this.#setUniform("saturation", -0.7);
-        this.#setUniform("contrast", 0.3);
+            // Bind the active array buffer and set position attribute
+            WebGLUtil.setBufferAndSetPositionAttribute(
+                gl,
+                program,
+                this.#vertices
+            );
 
-        // Vignette fragment shader uniforms
-        this.#setUniform("vignette_size", 0.25);
-        this.#setUniform("vignette_amount", 0.58);
+            // Create a texture
+            WebGLUtil.setImageTexture(gl, image);
 
-        // BulgePinch fragment shader uniforms
-        this.#setUniform("bulgepinch_texSize", [w, h]);
-        this.#setUniform("bulgepinch_center", [w / 2, h / 2]);
-        this.#setUniform("bulgepinch_radius", w * 0.75);
-        this.#setUniform("bulgepinch_strength", 0.07);
+            // Load uniforms (parameters) for the fragment shaders
+            for (const [name, value] of Object.entries(filter.params ?? {})) {
+                this.#setUniform(name, value);
+            }
 
-        // Draw our 6 VERTICES as 2 triangles
-        gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+            // Draw our 6 VERTICES as 2 triangles
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            image = this.#gl.canvas;
+        }
     }
 }

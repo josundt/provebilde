@@ -52,8 +52,8 @@
     }).finally(() => fullScreenTogglePromise = null);
   }
 
-  // src/provebilde-bakgrunn.ts
-  var ProveBildeBakgrunn = class {
+  // src/provebilde-canvas-background.ts
+  var ProveBildeCanvasBackground = class {
     constructor(ctx, edgeColor) {
       this.#edgeColor = edgeColor;
       this.#ctx = ctx;
@@ -359,8 +359,8 @@
     }
   };
 
-  // src/provebilde-sirkel.ts
-  var ProveBildeSirkel = class {
+  // src/provebilde-canvas-circle.ts
+  var ProveBildeCanvasCircle = class {
     constructor(ctx, edgeColor) {
       this.#edgeColor = edgeColor;
       this.#ctx = ctx;
@@ -578,19 +578,19 @@
     }
   };
 
-  // src/provebilde.ts
+  // src/provebilde-canvas.ts
   var defaultEdgeColor = {
     lighten: "rgb(255 255 255 / 0.666)",
     darken: "rgb(0 0 0 / 0.333)"
   };
-  var ProveBilde = class {
+  var ProveBildeCanvas = class {
     constructor(ctx, options3 = {}) {
       this.#options = options3;
       this.#ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
       const edgeColor = options3.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
-      this.#background = new ProveBildeBakgrunn(ctx, edgeColor);
-      this.#circle = new ProveBildeSirkel(ctx, edgeColor);
+      this.#background = new ProveBildeCanvasBackground(ctx, edgeColor);
+      this.#circle = new ProveBildeCanvasCircle(ctx, edgeColor);
       const safari = isSafari(window);
       this.#textVerticalAdjust = safari ? 0 : 2;
     }
@@ -600,7 +600,6 @@
     #circle;
     #textVerticalAdjust;
     #headFootHorizontalPadding = 6;
-    #watchTimer = 0;
     #setDefaultFont() {
       const ctx = this.#ctx;
       ctx.fillStyle = "#fff";
@@ -655,28 +654,7 @@
       );
       ctx.restore();
     }
-    stopWatch() {
-      if (this.#watchTimer !== null) {
-        clearInterval(this.#watchTimer);
-        this.#watchTimer = null;
-      }
-    }
-    startWatch() {
-      const timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
-      const renderDateAndTime = () => {
-        const dt = new Date(Date.now() - timeDelta);
-        if (this.#options.showDate) {
-          this.#renderTime(dt, "date", 155);
-        }
-        if (this.#options.showTime) {
-          this.#renderTime(dt, "time", 449);
-        }
-      };
-      renderDateAndTime();
-      this.stopWatch();
-      this.#watchTimer = setInterval(renderDateAndTime, 500);
-    }
-    start() {
+    renderInitial() {
       const ctx = this.#ctx;
       ctx.save();
       if (this.#options.imageSmootingDisabled) {
@@ -693,146 +671,18 @@
       if (o.footerText) {
         this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
       }
-      if (o.showDate || o.showTime) {
-        this.startWatch();
-      }
       ctx.restore();
     }
-    stop() {
-      this.stopWatch();
+    renderFrame(timeDelta = 0) {
+      const dt = new Date(Date.now() - timeDelta);
+      if (this.#options.showDate) {
+        this.#renderTime(dt, "date", 155);
+      }
+      if (this.#options.showTime) {
+        this.#renderTime(dt, "time", 449);
+      }
     }
   };
-
-  // src/plugin.ts
-  var proveBilde;
-  var canvas;
-  var options;
-  function start() {
-    if (proveBilde) {
-      proveBilde.stop();
-    }
-    const ctx = canvas.getContext("2d");
-    const [palW, palH] = pal;
-    const [winW, winH] = [
-      ctx.canvas.parentElement.clientWidth,
-      ctx.canvas.parentElement.clientHeight
-    ];
-    const [scaleX, scaleY] = [winW / palW, winH / palH];
-    const scale = Math.min(scaleX, scaleY);
-    canvas.width = palW * scale;
-    canvas.height = palH * scale;
-    ctx.scale(scale, scale);
-    proveBilde = new ProveBilde(ctx, options);
-    proveBilde.start();
-    document.body.style.zoom = "1";
-  }
-  var debouncedStart = debounce(start, 100);
-  function initPlugin(o) {
-    options = o;
-    const container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
-    canvas = document.createElement("canvas");
-    container?.appendChild(canvas);
-    canvas.addEventListener(
-      "click",
-      (e) => toggleFullScreen(e.target)
-    );
-    const resizeObserver = new ResizeObserver(debouncedStart);
-    resizeObserver.observe(container);
-    start();
-    return canvas;
-  }
-
-  // src/webgl/shaders/fragment/provebilde-combined.ts
-  var provebildeCombinedFragmentShader = `
-    precision highp float;
-    varying vec2 texCoords;
-    uniform sampler2D textureSampler;
-
-    uniform float brightness;
-    uniform float contrast;
-    uniform float saturation;
-
-    uniform float vignette_size;
-    uniform float vignette_amount;
-
-    uniform vec2  bulgepinch_texSize;
-    uniform float bulgepinch_radius;
-    uniform float bulgepinch_strength;
-    uniform vec2  bulgepinch_center;
-
-
-
-    vec3 adjustBrightness(vec3 color, float brightness) {
-        return color + brightness;
-    }
-
-    vec3 adjustContrast(vec3 color, float contrast) {
-        return 0.5 + (contrast + 1.0) * (color.rgb - 0.5);
-    }
-
-    vec3 adjustSaturation(vec3 color, float saturation) {
-        // WCAG 2.1 relative luminance base
-        const vec3 luminanceWeighting = vec3(0.2126, 0.7152, 0.0722);
-        vec3 grayscaleColor = vec3(dot(color, luminanceWeighting));
-        return mix(grayscaleColor, color, 1.0 + saturation);
-    }
-
-    vec3 vignette(vec3 color, float size, float amount) {
-        float dist = distance(texCoords, vec2(0.5, 0.5));
-        return color * smoothstep(0.8, size * 0.799, dist * (amount + size));
-    }
-
-
-    void main() {
-        vec2 coord = texCoords * bulgepinch_texSize;
-        coord -= bulgepinch_center;
-        float distance = length(coord);
-        if (distance < bulgepinch_radius) {
-            float percent = distance / bulgepinch_radius;
-            if (bulgepinch_strength > 0.0) {
-                coord *= mix(1.0, smoothstep(0.0, bulgepinch_radius / distance, percent), bulgepinch_strength * 0.75);
-            } else {
-                coord *= mix(1.0, pow(percent, 1.0 + bulgepinch_strength * 0.75) * bulgepinch_radius / distance, 1.0 - percent);
-            }
-        }
-        coord += bulgepinch_center;
-
-
-        vec4 color = texture2D(textureSampler, coord / bulgepinch_texSize);
-
-        color.rgb = adjustBrightness(color.rgb, brightness);
-        color.rgb = adjustSaturation(color.rgb, saturation);
-        color.rgb = adjustContrast(color.rgb, contrast);
-        color.rgb = vignette(color.rgb, vignette_size, vignette_amount);
-
-        gl_FragColor = color;
-
-        vec2 clampedCoord = clamp(coord, vec2(0.0), bulgepinch_texSize);
-        if (coord != clampedCoord) {
-            /* fade to transparent if we are outside the image */
-            gl_FragColor.a *= max(0.0, 1.0 - length(coord - clampedCoord));
-        }
-
-
-    }
-`;
-
-  // src/webgl/shaders/vertex/base-flipped.ts
-  var baseVertexShaderFlipped = `
-  attribute vec2 position;
-  varying vec2 texCoords;
-
-  void main() {
-    texCoords = (position + 1.0) / 2.0;
-
-    ////////////////////////////////////////
-    // FLIP: UNCOMMENT LINE BELOW TO FLIP //
-    ////////////////////////////////////////
-    texCoords.y = 1.0 - texCoords.y;
-
-    gl_Position = vec4(position, 0, 1.0);
-  }
-`;
 
   // src/webgl/webgl-util.ts
   var WebGLUtil = class {
@@ -843,6 +693,20 @@
       }
       gl.linkProgram(program);
       return program;
+    }
+    /**
+      Bind the active array buffer.
+     * @param gl The WebGLRenderingContext
+     * @param program The WebGLProgram
+     * @param vertices The array to bind
+     */
+    static setBufferAndSetPositionAttribute(gl, program, vertices) {
+      const vertexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      const positionLocation = gl.getAttribLocation(program, "position");
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(positionLocation);
     }
     static setImageTexture(gl, image) {
       const texture = gl.createTexture();
@@ -875,14 +739,15 @@
       }
       return shader;
     }
-    static compileVertexShaders(gl, ...shaderSources) {
-      return shaderSources.map(
-        (source) => this.#compileShader(gl, source, gl.VERTEX_SHADER)
-      );
+    static compileVertexShader(gl, shaderSource) {
+      return this.#compileShader(gl, shaderSource, gl.VERTEX_SHADER);
+    }
+    static compileFragmentShader(gl, shaderSource) {
+      return this.#compileShader(gl, shaderSource, gl.FRAGMENT_SHADER);
     }
     static compileFragmentShaders(gl, ...shaderSources) {
       return shaderSources.map(
-        (source) => this.#compileShader(gl, source, gl.FRAGMENT_SHADER)
+        (source) => this.compileFragmentShader(gl, source)
       );
     }
     static clamp(minValue, value, maxValue) {
@@ -890,26 +755,206 @@
     }
   };
 
+  // src/webgl/filters/filter-base.ts
+  var baseFragmentShader = `
+  precision highp float;
+
+  varying vec2 texCoords;
+  uniform sampler2D textureSampler;
+
+  void main() {
+    vec4 color = texture2D(textureSampler, texCoords);
+    gl_FragColor = color;
+  }
+`;
+  var FilterBase = class {
+    constructor(fragmentShaderSource = baseFragmentShader, params) {
+      this.fragmentShaderSource = fragmentShaderSource;
+      if (params) {
+        this.params = params;
+      }
+    }
+    #program;
+    getProgram(gl, vertexShader) {
+      if (this.#program) {
+        return this.#program;
+      }
+      const fragmentShader = WebGLUtil.compileFragmentShader(
+        gl,
+        this.fragmentShaderSource
+      );
+      return this.#program = WebGLUtil.createProgram(
+        gl,
+        vertexShader,
+        fragmentShader
+      );
+    }
+  };
+
+  // src/webgl/filters/brightness-saturation-contrast.ts
+  var brightnessSaturationContrastFragmentShader = `
+    precision highp float;
+    varying vec2 texCoords;
+    uniform sampler2D textureSampler;
+
+    uniform float brightness;
+    uniform float contrast;
+    uniform float saturation;
+
+    vec3 adjustBrightness(vec3 color, float brightness) {
+        return color + brightness;
+    }
+
+    vec3 adjustContrast(vec3 color, float contrast) {
+        return 0.5 + (contrast + 1.0) * (color.rgb - 0.5);
+    }
+
+    vec3 adjustSaturation(vec3 color, float saturation) {
+        // WCAG 2.1 relative luminance base
+        const vec3 luminanceWeighting = vec3(0.2126, 0.7152, 0.0722);
+        vec3 grayscaleColor = vec3(dot(color, luminanceWeighting));
+        return mix(grayscaleColor, color, 1.0 + saturation);
+    }
+
+    void main() {
+        vec4 color = texture2D(textureSampler, texCoords);
+
+        color.rgb = adjustBrightness(color.rgb, brightness);
+        color.rgb = adjustSaturation(color.rgb, saturation);
+        color.rgb = adjustContrast(color.rgb, contrast);
+
+        gl_FragColor = color;
+    }
+`;
+  var BrightnessSaturationContrastFilter = class extends FilterBase {
+    constructor(params) {
+      super(brightnessSaturationContrastFragmentShader, params);
+    }
+  };
+
+  // src/webgl/filters/bulge-pinch.ts
+  var bulgePinchFragmentShader = `
+    precision highp float;
+    varying vec2 texCoords;
+    uniform sampler2D textureSampler;
+
+    uniform vec2  texSize;
+    uniform float radius;
+    uniform float strength;
+    uniform vec2  center;
+
+    void main() {
+        vec2 coord = texCoords * texSize;
+        coord -= center;
+        float distance = length(coord);
+        if (distance < radius) {
+            float percent = distance / radius;
+            if (strength > 0.0) {
+                coord *= mix(1.0, smoothstep(0.0, radius / distance, percent), strength * 0.75);
+            } else {
+                coord *= mix(1.0, pow(percent, 1.0 + strength * 0.75) * radius / distance, 1.0 - percent);
+            }
+        }
+        coord += center;
+        gl_FragColor = texture2D(textureSampler, coord / texSize);
+        vec2 clampedCoord = clamp(coord, vec2(0.0), texSize);
+        if (coord != clampedCoord) {
+            /* fade to transparent if we are outside the image */
+            gl_FragColor.a *= max(0.0, 1.0 - length(coord - clampedCoord));
+        }
+    }
+`;
+  var BulgePinchFilter = class extends FilterBase {
+    constructor(params) {
+      super(bulgePinchFragmentShader, params);
+    }
+  };
+
+  // src/webgl/filters/vignette.ts
+  var vignetteFragmentShader = `
+    precision highp float;
+    varying vec2 texCoords;
+    uniform sampler2D textureSampler;
+
+    uniform float size;
+    uniform float amount;
+
+    vec3 vignette(vec3 color, float size, float amount) {
+        float dist = distance(texCoords, vec2(0.5, 0.5));
+        return color * smoothstep(0.8, size * 0.799, dist * (amount + size));
+    }
+
+    void main() {
+        vec4 color = texture2D(textureSampler, texCoords);
+
+        color.rgb = vignette(color.rgb, size, amount);
+
+        gl_FragColor = color;
+    }
+`;
+  var VignetteFilter = class extends FilterBase {
+    constructor(params) {
+      super(vignetteFragmentShader, params);
+    }
+  };
+
+  // src/webgl/shaders/vertex/base-flipped.ts
+  var baseVertexShaderFlipped = `
+  attribute vec2 position;
+  varying vec2 texCoords;
+
+  void main() {
+    texCoords = (position + 1.0) / 2.0;
+
+    ////////////////////////////////////////
+    // FLIP: UNCOMMENT LINE BELOW TO FLIP //
+    ////////////////////////////////////////
+    texCoords.y = 1.0 - texCoords.y;
+
+    gl_Position = vec4(position, 0, 1.0);
+  }
+`;
+
   // src/webgl/webgl-renderer.ts
   var WebGLRenderer = class _WebGLRenderer {
-    constructor(canvas2 = document.createElement("canvas"), logger = console) {
+    constructor(canvas2 = document.createElement("canvas"), ...filters) {
       const gl = canvas2.getContext("webgl");
       if (!gl) {
         throw new Error("WebGL not supported");
       }
+      if (!filters.length) {
+        filters.push(new FilterBase());
+      }
       this.#gl = gl;
-      this.#logger = logger;
+      this.#logger = console;
+      this.#filters = filters;
     }
     #gl;
+    #filters;
     #logger;
-    #initialized = false;
-    // eslint-disable-next-line no-unused-private-class-members
     #currentProgram = null;
+    #vertices = new Float32Array([
+      -1,
+      -1,
+      -1,
+      1,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      1,
+      1,
+      -1
+    ]);
+    #vertexShader = null;
     #programUniformLocations = /* @__PURE__ */ new Map();
     #useProgram(program) {
       const gl = this.#gl;
       gl.useProgram(program);
       this.#currentProgram = program;
+      this.#programUniformLocations = _WebGLRenderer.#getUniforms(gl, program);
+      return this.#currentProgram;
     }
     static #getUniforms(gl, program) {
       const result = /* @__PURE__ */ new Map();
@@ -1089,87 +1134,204 @@
         }
       }
     }
-    #initialize() {
-      if (this.#initialized) {
-        return;
+    #getVertexShader() {
+      if (this.#vertexShader) {
+        return this.#vertexShader;
       }
-      const gl = this.#gl;
-      const vertexShaders = WebGLUtil.compileVertexShaders(
-        gl,
+      const vertexShader = WebGLUtil.compileVertexShader(
+        this.#gl,
         baseVertexShaderFlipped
       );
-      const fragmentShaders = WebGLUtil.compileFragmentShaders(
-        gl,
-        // brightnessSaturationContrastFragmentShader
-        // vignetteFragmentShader
-        //bulgePinchFragmentShader
-        provebildeCombinedFragmentShader
-      );
-      const program = WebGLUtil.createProgram(
-        gl,
-        ...vertexShaders,
-        ...fragmentShaders
-      );
-      this.#useProgram(program);
-      this.#programUniformLocations = _WebGLRenderer.#getUniforms(gl, program);
-      const vertices = new Float32Array([
-        -1,
-        -1,
-        -1,
-        1,
-        1,
-        1,
-        -1,
-        -1,
-        1,
-        1,
-        1,
-        -1
-      ]);
-      const vertexBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-      const positionLocation = gl.getAttribLocation(program, "position");
-      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(positionLocation);
-      this.#initialized = true;
+      return this.#vertexShader = vertexShader;
     }
     renderImage(image) {
-      if (!this.#initialized) {
-        this.#initialize();
-      }
       const gl = this.#gl;
       const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
       gl.viewport(0, 0, w, h);
-      WebGLUtil.setImageTexture(gl, image);
-      this.#setUniform("brightness", 0);
-      this.#setUniform("saturation", -0.7);
-      this.#setUniform("contrast", 0.3);
-      this.#setUniform("vignette_size", 0.25);
-      this.#setUniform("vignette_amount", 0.58);
-      this.#setUniform("bulgepinch_texSize", [w, h]);
-      this.#setUniform("bulgepinch_center", [w / 2, h / 2]);
-      this.#setUniform("bulgepinch_radius", w * 0.75);
-      this.#setUniform("bulgepinch_strength", 0.07);
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      const vertexShader = this.#getVertexShader();
+      for (const filter of this.#filters) {
+        const program = this.#useProgram(
+          filter.getProgram(gl, vertexShader)
+        );
+        WebGLUtil.setBufferAndSetPositionAttribute(
+          gl,
+          program,
+          this.#vertices
+        );
+        WebGLUtil.setImageTexture(gl, image);
+        for (const [name, value] of Object.entries(filter.params ?? {})) {
+          this.#setUniform(name, value);
+        }
+        gl.clearColor(1, 1, 1, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        image = this.#gl.canvas;
+      }
     }
   };
 
-  // src/webgl-crt-filter.ts
-  function useWebGlCrtFilter(source) {
-    const glcanvas = document.createElement("canvas");
-    glcanvas.width = source.width;
-    glcanvas.height = source.height;
-    source.parentNode.insertBefore(glcanvas, source);
-    source.style.display = "none";
-    const glUtil = new WebGLRenderer(glcanvas);
-    const go = () => {
-      glUtil.renderImage(source);
-      requestAnimationFrame(go);
-    };
-    setInterval(go, 500);
+  // src/provebilde-fx.ts
+  var ProveBildeFx = class {
+    constructor(ctx, options3) {
+      this.#ctx = ctx;
+      this.#options = options3;
+    }
+    #ctx;
+    #options;
+    #renderer;
+    static getDefaultFx() {
+      return {
+        brightnessSaturationContrast: {
+          brightness: 0,
+          saturation: -0.7,
+          contrast: 0.3
+        },
+        bulgePinch: {
+          strength: 0.07
+        },
+        vignette: {
+          size: 0.25,
+          amount: 0.58
+        }
+      };
+    }
+    renderInitial() {
+      const className = "provebilde-fx";
+      const source = this.#ctx.canvas;
+      let glCanvas = source.parentElement?.querySelector(
+        `.${className}`
+      );
+      if (glCanvas) {
+        glCanvas.remove();
+      }
+      source.style.display = "none";
+      glCanvas = document.createElement("canvas");
+      glCanvas.className = className;
+      glCanvas.width = source.width;
+      glCanvas.height = source.height;
+      source.parentNode.insertBefore(glCanvas, source);
+      const o = this.#options;
+      const filters = [];
+      if (o?.brightnessSaturationContrast) {
+        filters.push(
+          new BrightnessSaturationContrastFilter(
+            o.brightnessSaturationContrast
+          )
+        );
+      }
+      if (o?.bulgePinch) {
+        filters.push(
+          new BulgePinchFilter({
+            texSize: [source.width, source.height],
+            center: [source.width / 2, source.height / 2],
+            radius: source.width * 0.75,
+            strength: o.bulgePinch.strength
+          })
+        );
+      }
+      if (o?.vignette) {
+        filters.push(new VignetteFilter(o.vignette));
+      }
+      if (filters.length) {
+        this.#renderer = new WebGLRenderer(glCanvas, ...filters);
+      }
+    }
+    renderFrame() {
+      this.#renderer?.renderImage(this.#ctx.canvas);
+    }
+  };
+
+  // src/provebilde.ts
+  var ProveBilde = class {
+    constructor(ctx, options3) {
+      this.#options = options3;
+      this.#provebildeCanvas = new ProveBildeCanvas(ctx, options3);
+      if (options3.fx) {
+        this.#provebildeFx = new ProveBildeFx(ctx, options3.fx);
+      }
+    }
+    #options;
+    #provebildeCanvas;
+    #provebildeFx = null;
+    #watchTimer = 0;
+    static getDefaultOptions() {
+      return {
+        headerText: "jasMIN",
+        footerText: "Retro TV",
+        showDate: true,
+        showTime: true,
+        // date: new Date(1985, 4, 12, 1, 23, 35),
+        blurredEdgesDisabled: false,
+        imageSmootingDisabled: false,
+        fx: ProveBildeFx.getDefaultFx()
+      };
+    }
+    stopWatch() {
+      if (this.#watchTimer !== null) {
+        clearInterval(this.#watchTimer);
+        this.#watchTimer = null;
+      }
+    }
+    startWatch() {
+      const timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
+      const renderFrame = () => {
+        this.#provebildeCanvas.renderFrame(timeDelta);
+        this.#provebildeFx?.renderFrame();
+      };
+      renderFrame();
+      this.stopWatch();
+      this.#watchTimer = setInterval(renderFrame, 500);
+    }
+    start() {
+      const o = this.#options;
+      this.#provebildeCanvas.renderInitial();
+      this.#provebildeFx?.renderInitial();
+      if (o.showDate || o.showTime) {
+        this.startWatch();
+      }
+    }
+    stop() {
+      this.stopWatch();
+    }
+  };
+
+  // src/plugin.ts
+  var proveBilde;
+  var canvas;
+  var options;
+  function start() {
+    if (proveBilde) {
+      proveBilde.stop();
+    }
+    const ctx = canvas.getContext("2d");
+    const [palW, palH] = pal;
+    const [winW, winH] = [
+      ctx.canvas.parentElement.clientWidth,
+      ctx.canvas.parentElement.clientHeight
+    ];
+    const [scaleX, scaleY] = [winW / palW, winH / palH];
+    const scale = Math.min(scaleX, scaleY);
+    canvas.width = palW * scale;
+    canvas.height = palH * scale;
+    ctx.scale(scale, scale);
+    proveBilde = new ProveBilde(ctx, options);
+    proveBilde.start();
+    document.body.style.zoom = "1";
+  }
+  var debouncedStart = debounce(start, 100);
+  function initPlugin(o) {
+    options = o;
+    const container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
+    container.innerHTML = "";
+    canvas = document.createElement("canvas");
+    container?.appendChild(canvas);
+    canvas.addEventListener(
+      "click",
+      (e) => toggleFullScreen(e.target)
+    );
+    const resizeObserver = new ResizeObserver(debouncedStart);
+    resizeObserver.observe(container);
+    start();
   }
 
   // src/index.ts
@@ -1181,11 +1343,24 @@
     showTime: true,
     // date: new Date(1985, 4, 12, 1, 23, 35),
     blurredEdgesDisabled: false,
-    imageSmootingDisabled: false
+    imageSmootingDisabled: false,
+    fx: {
+      brightnessSaturationContrast: {
+        brightness: 0,
+        saturation: -0.7,
+        contrast: 0.3
+      },
+      bulgePinch: {
+        strength: 0.07
+      },
+      vignette: {
+        size: 0.25,
+        amount: 0.58
+      }
+    }
   };
   document.addEventListener("DOMContentLoaded", () => {
-    const canvas2 = initPlugin(options2);
-    useWebGlCrtFilter(canvas2);
+    initPlugin(options2);
   });
 })();
 //# sourceMappingURL=bundle.js.map

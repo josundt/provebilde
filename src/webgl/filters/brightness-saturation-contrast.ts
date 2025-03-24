@@ -1,4 +1,7 @@
-export const brightnessSaturationContrastFragmentShader = `
+import type { UniformValue } from "../abstractions.ts";
+import { FilterBase } from "./filter-base.ts";
+
+const brightnessSaturationContrastFragmentShader = `
     precision highp float;
     varying vec2 texCoords;
     uniform sampler2D textureSampler;
@@ -32,3 +35,16 @@ export const brightnessSaturationContrastFragmentShader = `
         gl_FragColor = color;
     }
 `;
+
+export interface BrightnessSaturationContrastFilterParams
+    extends Record<string, UniformValue> {
+    brightness: number;
+    contrast: number;
+    saturation: number;
+}
+
+export class BrightnessSaturationContrastFilter extends FilterBase<BrightnessSaturationContrastFilterParams> {
+    constructor(params: BrightnessSaturationContrastFilterParams) {
+        super(brightnessSaturationContrastFragmentShader, params);
+    }
+}

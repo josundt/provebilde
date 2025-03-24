@@ -2,7 +2,7 @@ import type { Coord, EdgeColor } from "./abstractions.ts";
 import { pal } from "./constants.ts";
 import { createOffscreenCanvasContext } from "./utils.ts";
 
-export class ProveBildeBakgrunn {
+export class ProveBildeCanvasBackground {
     constructor(ctx: CanvasRenderingContext2D, edgeColor: EdgeColor) {
         this.#edgeColor = edgeColor;
         this.#ctx = ctx;
