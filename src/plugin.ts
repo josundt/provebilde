@@ -63,9 +63,9 @@ export function initPlugin(o: ProveBildePluginOptions): void {
                 let bscKey: keyof typeof bsc | undefined;
 
                 if (e.ctrlKey && e.shiftKey) {
-                    bscKey = "brightness";
-                } else if (e.ctrlKey) {
                     bscKey = "saturation";
+                } else if (e.ctrlKey) {
+                    bscKey = "brightness";
                 } else if (e.shiftKey) {
                     bscKey = "contrast";
                 }
