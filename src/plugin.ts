@@ -43,10 +43,10 @@ export function initPlugin(o: ProveBildePluginOptions): void {
     container.innerHTML = "";
     canvas = document.createElement("canvas");
     container?.appendChild(canvas);
-    canvas.addEventListener("click", e =>
-        toggleFullScreen(e.target as HTMLElement)
-    );
     const resizeObserver = new ResizeObserver(debouncedStart);
     resizeObserver.observe(container);
     start();
+    container.addEventListener("click", e => {
+        toggleFullScreen(e.currentTarget as HTMLElement);
+    });
 }

@@ -1325,13 +1325,12 @@
     container.innerHTML = "";
     canvas = document.createElement("canvas");
     container?.appendChild(canvas);
-    canvas.addEventListener(
-      "click",
-      (e) => toggleFullScreen(e.target)
-    );
     const resizeObserver = new ResizeObserver(debouncedStart);
     resizeObserver.observe(container);
     start();
+    container.addEventListener("click", (e) => {
+      toggleFullScreen(e.currentTarget);
+    });
   }
 
   // src/index.ts
