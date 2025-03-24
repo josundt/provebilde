@@ -3,7 +3,10 @@ import {
     BrightnessSaturationContrastFilter,
     type BrightnessSaturationContrastFilterParams
 } from "./webgl/filters/brightness-saturation-contrast.ts";
-import { BulgePinchFilter } from "./webgl/filters/bulge-pinch.ts";
+import {
+    BulgePinchFilter,
+    type BulgePinchFilterParams
+} from "./webgl/filters/bulge-pinch.ts";
 import {
     VignetteFilter,
     type VignetteFilterParams
@@ -70,14 +73,11 @@ export class ProveBildeFx {
             );
         }
         if (o?.bulgePinch) {
-            filters.push(
-                new BulgePinchFilter({
-                    texSize: [source.width, source.height],
-                    center: [source.width / 2, source.height / 2],
-                    radius: source.width * 0.75,
-                    strength: o.bulgePinch.strength
-                })
-            );
+            const filterParams = o.bulgePinch as BulgePinchFilterParams;
+            filterParams.texSize = [source.width, source.height];
+            filterParams.center = [source.width / 2, source.height / 2];
+            filterParams.radius = source.width * 0.75;
+            filters.push(new BulgePinchFilter(filterParams));
         }
         if (o?.vignette) {
             filters.push(new VignetteFilter(o.vignette));

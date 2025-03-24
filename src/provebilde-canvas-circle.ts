@@ -67,25 +67,36 @@ export class ProveBildeCanvasCircle {
         const [, , fW] = this.#rect;
         const h = 42;
 
-        // Background rect
-        ctx.fillStyle = inverse ? "#000" : "#fff";
-        ctx.fillRect(-fW / 2, 0, fW, h);
+        const stops = [
+            -fW / 2, // start
+            -fW / 2 + 126, // left rect end
+            -fW / 2 + 145, // reflection bar start
+            -fW / 2 + 149, // reflection bar end
+            fW / 2 - 126, // right rect start
+            fW / 2 // end
+        ];
+        for (const [i, stop] of stops.entries()) {
+            if (i === 0) {
+                continue;
+            }
+            const prevStop = stops[i - 1];
+            ctx.fillStyle =
+                i % 2 === 0
+                    ? inverse
+                        ? "#000"
+                        : "#fff"
+                    : inverse
+                      ? "#fff"
+                      : "#000";
+            ctx.fillRect(stop, 0, prevStop - stop, h + 1);
+        }
 
-        ctx.fillStyle = inverse ? "#fff" : "#000";
-
-        // Left rect
-        ctx.fillRect(-fW / 2, 0, 126, h);
-        // Right rect
-        ctx.fillRect(fW / 2 - 126, 0, 126, h);
-
-        // Reflection bar
-        ctx.fillRect(-fW / 2 + 145, 0, 4, h);
         // Reflection bar Blur borders
         ctx.fillStyle = inverse
             ? "rgb(0 0 0 / 0.333)"
             : "rgb(255 255 255 / 0.333)";
-        ctx.fillRect(-fW / 2 + 145, 0, 1, h);
-        ctx.fillRect(-fW / 2 + 148, 0, 1, h);
+        ctx.fillRect(stops[2], 0, 1, h + 1);
+        ctx.fillRect(stops[3] - 1, 0, 1, h + 1);
 
         return h;
     }
@@ -97,12 +108,12 @@ export class ProveBildeCanvasCircle {
         const [, , fW] = this.#rect;
 
         ctx.beginPath();
-        ctx.rect(-fW / 2, 0, fW, h);
+        ctx.rect(-fW / 2, 0, fW, h + 1);
         ctx.clip();
 
         for (let i = 0, x = -9 * itemW; i < 18; i++, x += itemW) {
             ctx.fillStyle = i % 2 === 0 ? "#bfbfbf" : "#000";
-            ctx.fillRect(x, 0, itemW, h);
+            ctx.fillRect(x, 0, itemW + 1, h + 1);
         }
 
         ctx.closePath();
@@ -125,7 +136,7 @@ export class ProveBildeCanvasCircle {
         for (const [i, color] of colors.entries()) {
             const x = (i - 3) * itemW;
             ctx.fillStyle = color;
-            ctx.fillRect(x, 0, itemW, h);
+            ctx.fillRect(x, 0, itemW + 1, h);
         }
         return h;
     }
@@ -138,7 +149,7 @@ export class ProveBildeCanvasCircle {
 
         // Black background
         ctx.fillStyle = "#000";
-        ctx.fillRect(-fW / 2, 0, fW, h);
+        ctx.fillRect(-fW / 2, 0, fW, h + 1);
 
         // Horizontal line
         ctx.fillStyle = "#fff";
@@ -179,7 +190,7 @@ export class ProveBildeCanvasCircle {
                     : this.#createGradientPattern(pixelFactor / fillInfo);
 
             ctx.translate(x, 0);
-            ctx.fillRect(0, 0, itemW, h);
+            ctx.fillRect(0, 0, itemW, h + 1);
             ctx.translate(-x, 0);
             x += itemW;
         }
@@ -199,7 +210,7 @@ export class ProveBildeCanvasCircle {
             const lightness = 51 * i;
             const hex = Math.round(lightness).toString(16).padStart(2, "0");
             ctx.fillStyle = `#${hex}${hex}${hex}`;
-            ctx.fillRect(x, 0, itemW, h);
+            ctx.fillRect(x, 0, itemW + 1, h + 1);
             x += itemW;
         }
         return h;
@@ -261,6 +272,11 @@ export class ProveBildeCanvasCircle {
 
     #renderCompleteForground(y: number, cX: number): void {
         const trans = this.#translate.bind(this);
+
+        this.#ctx.save();
+        this.#ctx.fillStyle = "#fff";
+        this.#ctx.fillRect(...this.#rect);
+        this.#ctx.restore();
 
         // Row 1
         y += trans(cX, y, () => this.#renderTopRow());

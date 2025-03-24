@@ -1,4 +1,4 @@
-import type { Coord, EdgeColor } from "./abstractions.ts";
+import type { Coord, EdgeColor, Size } from "./abstractions.ts";
 import { pal } from "./constants.ts";
 import { createOffscreenCanvasContext } from "./utils.ts";
 
@@ -182,191 +182,77 @@ export class ProveBildeCanvasBackground {
         ctx.restore();
     }
 
-    #drawLeftColorBar(): void {
+    #drawColorBar(color1: string, color2: string): Size {
         const ctx = this.#ctx;
         ctx.save();
-        const colors: [string, string, string, string] = [
-            "#3c9a7a",
-            "#577ad6",
-            "#b85a7a",
-            "#9d7a1e"
-        ];
+
         const squareSize = this.#gridSquareSize;
-        const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         const border = 2;
 
-        // Left 1/4:
-        [ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 2 + border / 2,
-            gridOffsetY + squareSize * 2 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 2 + border / 2,
-            gridOffsetY + squareSize * 4 - border / 2,
-            squareSize - border,
-            squareSize * 3.5 + border
-        );
+        const w1 = squareSize - border / 2;
+        const w = squareSize * 2 - border;
+        const h1 = squareSize * 3.5 + border;
+        const h2 = squareSize * 2 - border;
+        const h = h1 + h2;
 
-        // Left 2/4
-        [, ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 3,
-            gridOffsetY + squareSize * 2 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
+        // Color 1 rects
+        ctx.fillStyle = color1;
+        ctx.fillRect(0, 0, w1 + 1, squareSize * 2 - border);
+        ctx.fillRect(0, w - 1, squareSize - border, h1 + 1);
 
-        // Left 3/4
-        [, , ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 2 + border / 2,
-            gridOffsetY + squareSize * 7.5 - border / 2,
-            squareSize - border,
-            squareSize * 3.5 + border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 2 + border / 2,
-            gridOffsetY + squareSize * 11 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
-
-        // Left 4/4
-        [, , , ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 3,
-            gridOffsetY + squareSize * 11 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
+        // Color 2 rect
+        ctx.fillStyle = color2;
+        ctx.fillRect(w1, 0, squareSize - border / 2, h2);
 
         // Draw side "blur" borders
         ctx.fillStyle = this.#edgeColor.lighten;
-
-        ctx.fillRect(
-            gridOffsetX + squareSize * 2 + border / 2,
-            gridOffsetY + squareSize * 2 + border / 2,
-            1,
-            squareSize * 11 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 4 - border,
-            gridOffsetY + squareSize * 2 + border / 2,
-            1,
-            squareSize * 2 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 3 - border,
-            gridOffsetY + squareSize * 4 - border / 2,
-            1,
-            squareSize * 7 + border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 4 - border,
-            gridOffsetY + squareSize * 11 + border / 2,
-            1,
-            squareSize * 2 - border
-        );
+        ctx.fillRect(0, 0, border, h1 + h2);
+        ctx.fillRect(w - border, 0, 4, h1 + h2);
+        ctx.fillRect(w1 - border, h2, 4, h1);
         ctx.restore();
+
+        return [w, h];
     }
 
-    #drawRightColorBar(): void {
+    #drawColorBars(): void {
         const ctx = this.#ctx;
-        ctx.save();
-        const colors: [string, string, string, string] = [
-            "#577ad6",
-            "#7a900b",
-            "#9d7a1e",
-            "#7a64e9"
-        ];
         const squareSize = this.#gridSquareSize;
         const [gridOffsetX, gridOffsetY] = this.#gridOffset;
         const border = 2;
 
-        // Right 1/4
-        [ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 15 + border / 2,
-            gridOffsetY + squareSize * 2 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
+        let x = gridOffsetX + squareSize * 2 + border / 2;
+        const y = gridOffsetY + squareSize * 2 + border / 2;
 
-        // Right 2/4:
-        [, ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 16,
-            gridOffsetY + squareSize * 2 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 16 + border / 2,
-            gridOffsetY + squareSize * 4 - border / 2,
-            squareSize - border,
-            squareSize * 3.5 + border
-        );
+        // Top left
+        ctx.save();
+        ctx.translate(x, y);
+        const [, h] = this.#drawColorBar("#3c9a7a", "#577ad6");
 
-        // Right 3/4
-        [, , ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 15 + border / 2,
-            gridOffsetY + squareSize * 11 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
+        // Bottom left
+        ctx.translate(0, h * 2 - border);
+        ctx.scale(1, -1);
+        this.#drawColorBar("#b85a7a", "#9d7a1e");
+        ctx.restore();
 
-        // Right 4/4
-        [, , , ctx.fillStyle] = colors;
-        ctx.fillRect(
-            gridOffsetX + squareSize * 16 + border / 2,
-            gridOffsetY + squareSize * 7.5 - border / 2,
-            squareSize - border,
-            squareSize * 3.5 + border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 16,
-            gridOffsetY + squareSize * 11 + border / 2,
-            squareSize - border / 2,
-            squareSize * 2 - border
-        );
+        x += squareSize * 14 - border;
 
-        // Draw side "blur" borders
-        ctx.fillStyle = this.#edgeColor.lighten;
+        // Top right
+        ctx.save();
+        ctx.translate(x + squareSize, y);
+        ctx.scale(-1, 1);
+        this.#drawColorBar("#577ad6", "#7a900b");
 
-        ctx.fillRect(
-            gridOffsetX + squareSize * 15 + border / 2,
-            gridOffsetY + squareSize * 2 + border / 2,
-            1,
-            squareSize * 2 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 17 - border,
-            gridOffsetY + squareSize * 2 + border / 2,
-            1,
-            squareSize * 11 - border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 16 + border / 2,
-            gridOffsetY + squareSize * 4 - border / 2,
-            1,
-            squareSize * 7 + border
-        );
-        ctx.fillRect(
-            gridOffsetX + squareSize * 15 + border / 2,
-            gridOffsetY + squareSize * 11 + border / 2,
-            1,
-            squareSize * 2 - border
-        );
+        // Bottom right
+        ctx.translate(0, h * 2 - border);
+        ctx.scale(1, -1);
+        this.#drawColorBar("#9d7a1e", "#7a64e9");
+        ctx.restore();
+
         ctx.restore();
     }
 
     render(): void {
         this.#drawGrid();
-        this.#drawLeftColorBar();
-        this.#drawRightColorBar();
+        this.#drawColorBars();
     }
 }

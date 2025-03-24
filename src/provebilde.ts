@@ -55,7 +55,7 @@ export class ProveBilde {
 
         renderFrame();
         this.stopWatch(); // Ensure no duplicates
-        this.#watchTimer = setInterval(renderFrame, 500);
+        this.#watchTimer = setInterval(renderFrame, 100);
     }
 
     start(): void {

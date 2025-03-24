@@ -194,168 +194,56 @@
       }
       ctx.restore();
     }
-    #drawLeftColorBar() {
+    #drawColorBar(color1, color2) {
       const ctx = this.#ctx;
       ctx.save();
-      const colors = [
-        "#3c9a7a",
-        "#577ad6",
-        "#b85a7a",
-        "#9d7a1e"
-      ];
       const squareSize = this.#gridSquareSize;
-      const [gridOffsetX, gridOffsetY] = this.#gridOffset;
       const border = 2;
-      [ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 2 + border / 2,
-        gridOffsetY + squareSize * 2 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 2 + border / 2,
-        gridOffsetY + squareSize * 4 - border / 2,
-        squareSize - border,
-        squareSize * 3.5 + border
-      );
-      [, ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 3,
-        gridOffsetY + squareSize * 2 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      [, , ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 2 + border / 2,
-        gridOffsetY + squareSize * 7.5 - border / 2,
-        squareSize - border,
-        squareSize * 3.5 + border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 2 + border / 2,
-        gridOffsetY + squareSize * 11 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      [, , , ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 3,
-        gridOffsetY + squareSize * 11 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
+      const w1 = squareSize - border / 2;
+      const w = squareSize * 2 - border;
+      const h1 = squareSize * 3.5 + border;
+      const h2 = squareSize * 2 - border;
+      const h = h1 + h2;
+      ctx.fillStyle = color1;
+      ctx.fillRect(0, 0, w1 + 1, squareSize * 2 - border);
+      ctx.fillRect(0, w - 1, squareSize - border, h1 + 1);
+      ctx.fillStyle = color2;
+      ctx.fillRect(w1, 0, squareSize - border / 2, h2);
       ctx.fillStyle = this.#edgeColor.lighten;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 2 + border / 2,
-        gridOffsetY + squareSize * 2 + border / 2,
-        1,
-        squareSize * 11 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 4 - border,
-        gridOffsetY + squareSize * 2 + border / 2,
-        1,
-        squareSize * 2 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 3 - border,
-        gridOffsetY + squareSize * 4 - border / 2,
-        1,
-        squareSize * 7 + border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 4 - border,
-        gridOffsetY + squareSize * 11 + border / 2,
-        1,
-        squareSize * 2 - border
-      );
+      ctx.fillRect(0, 0, border, h1 + h2);
+      ctx.fillRect(w - border, 0, 4, h1 + h2);
+      ctx.fillRect(w1 - border, h2, 4, h1);
       ctx.restore();
+      return [w, h];
     }
-    #drawRightColorBar() {
+    #drawColorBars() {
       const ctx = this.#ctx;
-      ctx.save();
-      const colors = [
-        "#577ad6",
-        "#7a900b",
-        "#9d7a1e",
-        "#7a64e9"
-      ];
       const squareSize = this.#gridSquareSize;
       const [gridOffsetX, gridOffsetY] = this.#gridOffset;
       const border = 2;
-      [ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 15 + border / 2,
-        gridOffsetY + squareSize * 2 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      [, ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 16,
-        gridOffsetY + squareSize * 2 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 16 + border / 2,
-        gridOffsetY + squareSize * 4 - border / 2,
-        squareSize - border,
-        squareSize * 3.5 + border
-      );
-      [, , ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 15 + border / 2,
-        gridOffsetY + squareSize * 11 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      [, , , ctx.fillStyle] = colors;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 16 + border / 2,
-        gridOffsetY + squareSize * 7.5 - border / 2,
-        squareSize - border,
-        squareSize * 3.5 + border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 16,
-        gridOffsetY + squareSize * 11 + border / 2,
-        squareSize - border / 2,
-        squareSize * 2 - border
-      );
-      ctx.fillStyle = this.#edgeColor.lighten;
-      ctx.fillRect(
-        gridOffsetX + squareSize * 15 + border / 2,
-        gridOffsetY + squareSize * 2 + border / 2,
-        1,
-        squareSize * 2 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 17 - border,
-        gridOffsetY + squareSize * 2 + border / 2,
-        1,
-        squareSize * 11 - border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 16 + border / 2,
-        gridOffsetY + squareSize * 4 - border / 2,
-        1,
-        squareSize * 7 + border
-      );
-      ctx.fillRect(
-        gridOffsetX + squareSize * 15 + border / 2,
-        gridOffsetY + squareSize * 11 + border / 2,
-        1,
-        squareSize * 2 - border
-      );
+      let x = gridOffsetX + squareSize * 2 + border / 2;
+      const y = gridOffsetY + squareSize * 2 + border / 2;
+      ctx.save();
+      ctx.translate(x, y);
+      const [, h] = this.#drawColorBar("#3c9a7a", "#577ad6");
+      ctx.translate(0, h * 2 - border);
+      ctx.scale(1, -1);
+      this.#drawColorBar("#b85a7a", "#9d7a1e");
+      ctx.restore();
+      x += squareSize * 14 - border;
+      ctx.save();
+      ctx.translate(x + squareSize, y);
+      ctx.scale(-1, 1);
+      this.#drawColorBar("#577ad6", "#7a900b");
+      ctx.translate(0, h * 2 - border);
+      ctx.scale(1, -1);
+      this.#drawColorBar("#9d7a1e", "#7a64e9");
+      ctx.restore();
       ctx.restore();
     }
     render() {
       this.#drawGrid();
-      this.#drawLeftColorBar();
-      this.#drawRightColorBar();
+      this.#drawColorBars();
     }
   };
 
@@ -413,15 +301,31 @@
       const ctx = this.#ctx;
       const [, , fW] = this.#rect;
       const h = 42;
-      ctx.fillStyle = inverse ? "#000" : "#fff";
-      ctx.fillRect(-fW / 2, 0, fW, h);
-      ctx.fillStyle = inverse ? "#fff" : "#000";
-      ctx.fillRect(-fW / 2, 0, 126, h);
-      ctx.fillRect(fW / 2 - 126, 0, 126, h);
-      ctx.fillRect(-fW / 2 + 145, 0, 4, h);
+      const stops = [
+        -fW / 2,
+        // start
+        -fW / 2 + 126,
+        // left rect end
+        -fW / 2 + 145,
+        // reflection bar start
+        -fW / 2 + 149,
+        // reflection bar end
+        fW / 2 - 126,
+        // right rect start
+        fW / 2
+        // end
+      ];
+      for (const [i, stop] of stops.entries()) {
+        if (i === 0) {
+          continue;
+        }
+        const prevStop = stops[i - 1];
+        ctx.fillStyle = i % 2 === 0 ? inverse ? "#000" : "#fff" : inverse ? "#fff" : "#000";
+        ctx.fillRect(stop, 0, prevStop - stop, h + 1);
+      }
       ctx.fillStyle = inverse ? "rgb(0 0 0 / 0.333)" : "rgb(255 255 255 / 0.333)";
-      ctx.fillRect(-fW / 2 + 145, 0, 1, h);
-      ctx.fillRect(-fW / 2 + 148, 0, 1, h);
+      ctx.fillRect(stops[2], 0, 1, h + 1);
+      ctx.fillRect(stops[3] - 1, 0, 1, h + 1);
       return h;
     }
     #renderSquareWave75Row() {
@@ -430,11 +334,11 @@
       const h = 42;
       const [, , fW] = this.#rect;
       ctx.beginPath();
-      ctx.rect(-fW / 2, 0, fW, h);
+      ctx.rect(-fW / 2, 0, fW, h + 1);
       ctx.clip();
       for (let i = 0, x = -9 * itemW; i < 18; i++, x += itemW) {
         ctx.fillStyle = i % 2 === 0 ? "#bfbfbf" : "#000";
-        ctx.fillRect(x, 0, itemW, h);
+        ctx.fillRect(x, 0, itemW + 1, h + 1);
       }
       ctx.closePath();
       return h;
@@ -454,7 +358,7 @@
       for (const [i, color] of colors.entries()) {
         const x = (i - 3) * itemW;
         ctx.fillStyle = color;
-        ctx.fillRect(x, 0, itemW, h);
+        ctx.fillRect(x, 0, itemW + 1, h);
       }
       return h;
     }
@@ -464,7 +368,7 @@
       const h = 42;
       const itemW = 42;
       ctx.fillStyle = "#000";
-      ctx.fillRect(-fW / 2, 0, fW, h);
+      ctx.fillRect(-fW / 2, 0, fW, h + 1);
       ctx.fillStyle = "#fff";
       ctx.fillRect(-fW / 2, h / 2 - 1, fW, 2);
       for (let x = -itemW * 6.5 - 2; x < itemW * 6.5; x += itemW) {
@@ -491,7 +395,7 @@
       for (const fillInfo of squares) {
         ctx.fillStyle = typeof fillInfo === "string" ? fillInfo : this.#createGradientPattern(pixelFactor / fillInfo);
         ctx.translate(x, 0);
-        ctx.fillRect(0, 0, itemW, h);
+        ctx.fillRect(0, 0, itemW, h + 1);
         ctx.translate(-x, 0);
         x += itemW;
       }
@@ -507,7 +411,7 @@
         const lightness = 51 * i;
         const hex = Math.round(lightness).toString(16).padStart(2, "0");
         ctx.fillStyle = `#${hex}${hex}${hex}`;
-        ctx.fillRect(x, 0, itemW, h);
+        ctx.fillRect(x, 0, itemW + 1, h + 1);
         x += itemW;
       }
       return h;
@@ -551,6 +455,10 @@
     }
     #renderCompleteForground(y, cX) {
       const trans = this.#translate.bind(this);
+      this.#ctx.save();
+      this.#ctx.fillStyle = "#fff";
+      this.#ctx.fillRect(...this.#rect);
+      this.#ctx.restore();
       y += trans(cX, y, () => this.#renderTopRow());
       y += trans(cX, y, () => this.#renderHeaderRow());
       y += trans(cX, y, () => this.#renderReflectionCheckRow(false));
@@ -1220,14 +1128,11 @@
         );
       }
       if (o?.bulgePinch) {
-        filters.push(
-          new BulgePinchFilter({
-            texSize: [source.width, source.height],
-            center: [source.width / 2, source.height / 2],
-            radius: source.width * 0.75,
-            strength: o.bulgePinch.strength
-          })
-        );
+        const filterParams = o.bulgePinch;
+        filterParams.texSize = [source.width, source.height];
+        filterParams.center = [source.width / 2, source.height / 2];
+        filterParams.radius = source.width * 0.75;
+        filters.push(new BulgePinchFilter(filterParams));
       }
       if (o?.vignette) {
         filters.push(new VignetteFilter(o.vignette));
@@ -1280,7 +1185,7 @@
       };
       renderFrame();
       this.stopWatch();
-      this.#watchTimer = setInterval(renderFrame, 500);
+      this.#watchTimer = setInterval(renderFrame, 100);
     }
     start() {
       const o = this.#options;
@@ -1330,6 +1235,43 @@
     start();
     container.addEventListener("click", (e) => {
       toggleFullScreen(e.currentTarget);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (!o.fx) {
+        return;
+      }
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const factor = e.key === "ArrowRight" ? 1 : -1;
+        const bsc = o.fx.brightnessSaturationContrast;
+        if (bsc) {
+          let bscKey;
+          if (e.ctrlKey && e.shiftKey) {
+            bscKey = "brightness";
+          } else if (e.ctrlKey) {
+            bscKey = "saturation";
+          } else if (e.shiftKey) {
+            bscKey = "contrast";
+          }
+          if (bscKey) {
+            bsc[bscKey] = WebGLUtil.clamp(
+              -1,
+              bsc[bscKey] + 5e-3 * factor,
+              1
+            );
+          }
+        }
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        const factor = e.key === "ArrowUp" ? 1 : -1;
+        const bp = o.fx.bulgePinch;
+        if (bp) {
+          bp.strength = WebGLUtil.clamp(
+            0,
+            bp.strength + 5e-3 * factor,
+            1
+          );
+        }
+      }
     });
   }
 

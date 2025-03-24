@@ -1,6 +1,7 @@
 import { pal } from "./constants.ts";
 import { ProveBilde, type ProveBildeOptions } from "./provebilde.ts";
 import { debounce, toggleFullScreen } from "./utils.ts";
+import { WebGLUtil } from "./webgl/webgl-util.ts";
 
 export interface ProveBildePluginOptions extends ProveBildeOptions {
     /** selector string or element */
@@ -48,5 +49,46 @@ export function initPlugin(o: ProveBildePluginOptions): void {
     start();
     container.addEventListener("click", e => {
         toggleFullScreen(e.currentTarget as HTMLElement);
+    });
+    document.addEventListener("keydown", e => {
+        if (!o.fx) {
+            return;
+        }
+
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            const factor = e.key === "ArrowRight" ? 1 : -1;
+
+            const bsc = o.fx.brightnessSaturationContrast;
+            if (bsc) {
+                let bscKey: keyof typeof bsc | undefined;
+
+                if (e.ctrlKey && e.shiftKey) {
+                    bscKey = "brightness";
+                } else if (e.ctrlKey) {
+                    bscKey = "saturation";
+                } else if (e.shiftKey) {
+                    bscKey = "contrast";
+                }
+                if (bscKey) {
+                    bsc[bscKey] = WebGLUtil.clamp(
+                        -1,
+                        (bsc[bscKey] as number) + 0.005 * factor,
+                        1
+                    );
+                }
+            }
+        }
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            const factor = e.key === "ArrowUp" ? 1 : -1;
+
+            const bp = o.fx.bulgePinch;
+            if (bp) {
+                bp.strength = WebGLUtil.clamp(
+                    0,
+                    bp.strength + 0.005 * factor,
+                    1
+                );
+            }
+        }
     });
 }
