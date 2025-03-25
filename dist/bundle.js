@@ -1252,14 +1252,6 @@
   // src/provebilde-plugin.ts
   var ProveBildePlugin = class _ProveBildePlugin {
     constructor(options2) {
-      this.focusedTextBox = "headerText";
-      this.#debouncedStart = debounce(
-        this.#start.bind(this),
-        100
-      );
-      this.#debouncedClearOsd = debounce(() => {
-        this.#options.ocd.param = "none";
-      }, 3e3);
       this.#options = options2;
       const container = typeof options2.container === "string" ? document.querySelector(options2.container) : options2.container;
       container.innerHTML = "";
@@ -1274,6 +1266,8 @@
     #canvas;
     #options;
     #proveBilde;
+    #focusedTextBox = "headerText";
+    #hadKeyStrokeAfterFocus = false;
     #start() {
       if (this.#proveBilde) {
         this.#proveBilde.stop();
@@ -1293,8 +1287,13 @@
       this.#proveBilde.start();
       document.body.style.zoom = "1";
     }
-    #debouncedStart;
-    #debouncedClearOsd;
+    #debouncedStart = debounce(
+      this.#start.bind(this),
+      100
+    );
+    #debouncedClearOsd = debounce(() => {
+      this.#options.ocd.param = "none";
+    }, 3e3);
     #initEventHandlers(container) {
       const o = this.#options;
       const resizeObserver = new ResizeObserver(this.#debouncedStart);
@@ -1335,6 +1334,17 @@
           e.preventDefault();
         } else if (["ArrowUp", "ArrowDown"].includes(e.key)) {
           const factor = e.key === "ArrowUp" ? 1 : -1;
+          const nowTime = Date.now();
+          const displayedDate = new Date(
+            nowTime + this.#proveBilde.timeDelta
+          );
+          const newTime = displayedDate.setDate(
+            displayedDate.getDate() - factor
+          );
+          this.#proveBilde.timeDelta = newTime - nowTime;
+          e.preventDefault();
+        } else if (["PageUp", "PageDown"].includes(e.key)) {
+          const factor = e.key === "PageUp" ? 1 : -1;
           const bp = o.fx.bulgePinch;
           if (bp) {
             bp.strength = WebGLUtil.clamp(
@@ -1344,27 +1354,21 @@
             );
           }
           e.preventDefault();
-        } else if (["PageUp", "PageDown"].includes(e.key)) {
-          const factor = e.key === "PageUp" ? 1 : -1;
-          const nowTime = Date.now();
-          const displayedDate = new Date(
-            nowTime + this.#proveBilde.timeDelta
-          );
-          const newTime = displayedDate.setDate(
-            displayedDate.getDate() + factor
-          );
-          this.#proveBilde.timeDelta = newTime - nowTime;
-          e.preventDefault();
         } else if (e.key === "Tab") {
-          this.focusedTextBox = this.focusedTextBox === "headerText" ? "footerText" : "headerText";
+          this.#focusedTextBox = this.#focusedTextBox === "headerText" ? "footerText" : "headerText";
+          this.#hadKeyStrokeAfterFocus = false;
           e.preventDefault();
         } else if (/^.$/u.test(e.key)) {
           const char = e.key.toUpperCase();
-          const textProp = this.focusedTextBox;
+          const textProp = this.#focusedTextBox;
+          if (!this.#hadKeyStrokeAfterFocus) {
+            o[textProp] = "";
+          }
           o[textProp] += char;
+          this.#hadKeyStrokeAfterFocus = true;
           e.preventDefault();
         } else if (e.key === "Backspace") {
-          const textProp = this.focusedTextBox;
+          const textProp = this.#focusedTextBox;
           if (o[textProp]) {
             o[textProp] = o[textProp].substring(
               0,
@@ -1373,7 +1377,7 @@
           }
           e.preventDefault();
         } else if (e.key === "Delete") {
-          const textProp = this.focusedTextBox;
+          const textProp = this.#focusedTextBox;
           if (o[textProp]) {
             o[textProp] = "";
           }
