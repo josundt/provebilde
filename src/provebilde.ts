@@ -1,11 +1,13 @@
 import {
     ProveBildeCanvas,
+    type OnScreenDisplay,
     type ProveBildeCanvasOptions
 } from "./provebilde-canvas.ts";
 import { ProveBildeFx, type ProvebildeFxOptions } from "./provebilde-fx.ts";
 
 export interface ProveBildeOptions extends ProveBildeCanvasOptions {
     fx?: ProvebildeFxOptions;
+    ocd: OnScreenDisplay;
 }
 
 export class ProveBilde {
@@ -32,7 +34,11 @@ export class ProveBilde {
 
             blurredEdgesDisabled: false,
             imageSmootingDisabled: false,
-            fx: ProveBildeFx.getDefaultFx()
+            fx: ProveBildeFx.getDefaultFx(),
+            ocd: {
+                param: "none",
+                level: 0
+            }
         };
     }
 
@@ -49,7 +55,7 @@ export class ProveBilde {
             : Date.now() - this.#options.date.getTime();
 
         const renderFrame = (): void => {
-            this.#provebildeCanvas.renderFrame(timeDelta);
+            this.#provebildeCanvas.renderFrame(timeDelta, this.#options.ocd);
             this.#provebildeFx?.renderFrame();
         };
 

@@ -321,12 +321,13 @@ export class ProveBildeCanvasCircle {
 
         // Circle clip
         const ctx = this.#ctx;
+        ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.clip();
 
         const foreGroundYOffset = (palH - radius * 2) / 2;
         this.#renderCompleteForground(foreGroundYOffset, centerX);
-        ctx.closePath();
+        ctx.restore();
     }
 }

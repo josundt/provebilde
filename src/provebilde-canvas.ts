@@ -19,6 +19,11 @@ export interface ProveBildeCanvasOptions {
     date?: Date;
 }
 
+export interface OnScreenDisplay {
+    param: "none" | "brightness" | "contrast" | "saturation";
+    level: number;
+}
+
 export class ProveBildeCanvas {
     constructor(
         ctx: CanvasRenderingContext2D,
@@ -46,9 +51,9 @@ export class ProveBildeCanvas {
 
     readonly #headFootHorizontalPadding: number = 6;
 
-    #setDefaultFont(): void {
+    #setDefaultFont(fillStyle: string = "#fff"): void {
         const ctx = this.#ctx;
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = fillStyle;
         ctx.font = "32px Arial, Helvetica, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -81,9 +86,16 @@ export class ProveBildeCanvas {
 
         ctx.save();
         ctx.translate(cX, yOffset + headerH / 2 + this.#textVerticalAdjust);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(
+            -headerW / 2 + 1,
+            -headerH / 2 - 1,
+            headerW - 2,
+            headerH - 2
+        );
         this.#setDefaultFont();
         ctx.fillText(
-            text.toUpperCase(),
+            text.toUpperCase().trim(),
             0,
             0,
             headerW - this.#headFootHorizontalPadding * 2
@@ -121,39 +133,73 @@ export class ProveBildeCanvas {
         ctx.restore();
     }
 
+    #renderOsd(osd: OnScreenDisplay): void {
+        const ctx = this.#ctx;
+        ctx.save();
+
+        const [palW, palH] = pal;
+        const normalizedValue = Math.round(
+            Math.max(-1, Math.min(1, osd.level)) * 20
+        );
+        ctx.fillStyle = "#0e0";
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#0b0";
+        ctx.font = "bold 24px Arial, Helvetica, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.translate(palW / 2, palH / 1.25);
+        for (let i = -20; i <= 20; i++) {
+            let text: string;
+            if (normalizedValue < 0) {
+                text = i < normalizedValue || i > 0 ? "-" : "█";
+            } else {
+                text = i < 0 || i > normalizedValue ? "-" : "█";
+            }
+            ctx.fillText(text, i * 10, 0, 1000);
+        }
+        ctx.translate(0, 40);
+        const paramText = (
+            osd.param === "saturation" ? "color" : osd.param
+        ).toUpperCase();
+        ctx.fillText(paramText, 0, 0, 1000);
+        ctx.strokeText(paramText, 0, 0, 1000);
+        ctx.restore();
+    }
+
     renderInitial(): void {
         const ctx = this.#ctx;
-
-        ctx.save();
 
         if (this.#options.imageSmootingDisabled) {
             ctx.imageSmoothingEnabled = false;
         }
 
-        this.#background.render();
-        this.#circle.render();
-
-        const [palW, palH] = pal;
-        const [centerX] = [palW / 2, palH / 2];
-
-        const o = this.#options;
-        if (o.headerText) {
-            this.#renderHeaderOrFooterText(o.headerText, centerX, 57);
-        }
-        if (o.footerText) {
-            this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
-        }
-
         ctx.restore();
     }
 
-    renderFrame(timeDelta: number = 0): void {
+    renderFrame(timeDelta: number, osd: OnScreenDisplay): void {
         const dt = new Date(Date.now() - timeDelta);
-        if (this.#options.showDate) {
+        const o = this.#options;
+        const [palW, palH] = pal;
+        const [centerX] = [palW / 2, palH / 2];
+
+        this.#background.render();
+        this.#circle.render();
+
+        if (o.showDate) {
             this.#renderTime(dt, "date", 155);
         }
-        if (this.#options.showTime) {
+        if (o.showTime) {
             this.#renderTime(dt, "time", 449);
+        }
+        if (typeof o.headerText === "string") {
+            this.#renderHeaderOrFooterText(o.headerText, centerX, 57);
+        }
+        if (typeof o.footerText === "string") {
+            this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
+        }
+        if (osd.param !== "none") {
+            this.#renderOsd(osd);
         }
     }
 }

@@ -27,9 +27,9 @@
     if ("OffscreenCanvas" in self) {
       result = new OffscreenCanvas(...size).getContext("2d");
     } else {
-      const canvas2 = document.createElement("canvas");
-      [canvas2.width, canvas2.height] = size;
-      return canvas2.getContext("2d");
+      const canvas = document.createElement("canvas");
+      [canvas.width, canvas.height] = size;
+      return canvas.getContext("2d");
     }
     return result;
   }
@@ -477,12 +477,13 @@
       const [centerX, centerY] = [palW / 2, palH / 2];
       const radius = 84 * 3;
       const ctx = this.#ctx;
+      ctx.save();
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.clip();
       const foreGroundYOffset = (palH - radius * 2) / 2;
       this.#renderCompleteForground(foreGroundYOffset, centerX);
-      ctx.closePath();
+      ctx.restore();
     }
   };
 
@@ -492,11 +493,11 @@
     darken: "rgb(0 0 0 / 0.333)"
   };
   var ProveBildeCanvas = class {
-    constructor(ctx, options3 = {}) {
-      this.#options = options3;
+    constructor(ctx, options2 = {}) {
+      this.#options = options2;
       this.#ctx = ctx;
       const transp = "rgb(0 0 0 / 0)";
-      const edgeColor = options3.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
+      const edgeColor = options2.blurredEdgesDisabled ? { lighten: transp, darken: transp } : defaultEdgeColor;
       this.#background = new ProveBildeCanvasBackground(ctx, edgeColor);
       this.#circle = new ProveBildeCanvasCircle(ctx, edgeColor);
       const safari = isSafari(window);
@@ -508,9 +509,9 @@
     #circle;
     #textVerticalAdjust;
     #headFootHorizontalPadding = 6;
-    #setDefaultFont() {
+    #setDefaultFont(fillStyle = "#fff") {
       const ctx = this.#ctx;
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = fillStyle;
       ctx.font = "32px Arial, Helvetica, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -534,9 +535,16 @@
       const [headerW, headerH] = [168, 42];
       ctx.save();
       ctx.translate(cX, yOffset + headerH / 2 + this.#textVerticalAdjust);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(
+        -headerW / 2 + 1,
+        -headerH / 2 - 1,
+        headerW - 2,
+        headerH - 2
+      );
       this.#setDefaultFont();
       ctx.fillText(
-        text.toUpperCase(),
+        text.toUpperCase().trim(),
         0,
         0,
         headerW - this.#headFootHorizontalPadding * 2
@@ -562,32 +570,63 @@
       );
       ctx.restore();
     }
-    renderInitial() {
+    #renderOsd(osd) {
       const ctx = this.#ctx;
       ctx.save();
+      const [palW, palH] = pal;
+      const normalizedValue = Math.round(
+        Math.max(-1, Math.min(1, osd.level)) * 20
+      );
+      ctx.fillStyle = "#0e0";
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#0b0";
+      ctx.font = "bold 24px Arial, Helvetica, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.translate(palW / 2, palH / 1.25);
+      for (let i = -20; i <= 20; i++) {
+        let text;
+        if (normalizedValue < 0) {
+          text = i < normalizedValue || i > 0 ? "-" : "\u2588";
+        } else {
+          text = i < 0 || i > normalizedValue ? "-" : "\u2588";
+        }
+        ctx.fillText(text, i * 10, 0, 1e3);
+      }
+      ctx.translate(0, 40);
+      const paramText = (osd.param === "saturation" ? "color" : osd.param).toUpperCase();
+      ctx.fillText(paramText, 0, 0, 1e3);
+      ctx.strokeText(paramText, 0, 0, 1e3);
+      ctx.restore();
+    }
+    renderInitial() {
+      const ctx = this.#ctx;
       if (this.#options.imageSmootingDisabled) {
         ctx.imageSmoothingEnabled = false;
       }
-      this.#background.render();
-      this.#circle.render();
-      const [palW, palH] = pal;
-      const [centerX] = [palW / 2, palH / 2];
-      const o = this.#options;
-      if (o.headerText) {
-        this.#renderHeaderOrFooterText(o.headerText, centerX, 57);
-      }
-      if (o.footerText) {
-        this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
-      }
       ctx.restore();
     }
-    renderFrame(timeDelta = 0) {
+    renderFrame(timeDelta, osd) {
       const dt = new Date(Date.now() - timeDelta);
-      if (this.#options.showDate) {
+      const o = this.#options;
+      const [palW, palH] = pal;
+      const [centerX] = [palW / 2, palH / 2];
+      this.#background.render();
+      this.#circle.render();
+      if (o.showDate) {
         this.#renderTime(dt, "date", 155);
       }
-      if (this.#options.showTime) {
+      if (o.showTime) {
         this.#renderTime(dt, "time", 449);
+      }
+      if (typeof o.headerText === "string") {
+        this.#renderHeaderOrFooterText(o.headerText, centerX, 57);
+      }
+      if (typeof o.footerText === "string") {
+        this.#renderHeaderOrFooterText(o.footerText, centerX, 436);
+      }
+      if (osd.param !== "none") {
+        this.#renderOsd(osd);
       }
     }
   };
@@ -825,8 +864,8 @@
 
   // src/webgl/webgl-renderer.ts
   var WebGLRenderer = class _WebGLRenderer {
-    constructor(canvas2 = document.createElement("canvas"), ...filters) {
-      const gl = canvas2.getContext("webgl");
+    constructor(canvas = document.createElement("canvas"), ...filters) {
+      const gl = canvas.getContext("webgl");
       if (!gl) {
         throw new Error("WebGL not supported");
       }
@@ -1080,9 +1119,9 @@
 
   // src/provebilde-fx.ts
   var ProveBildeFx = class {
-    constructor(ctx, options3) {
+    constructor(ctx, options2) {
       this.#ctx = ctx;
-      this.#options = options3;
+      this.#options = options2;
     }
     #ctx;
     #options;
@@ -1148,11 +1187,11 @@
 
   // src/provebilde.ts
   var ProveBilde = class {
-    constructor(ctx, options3) {
-      this.#options = options3;
-      this.#provebildeCanvas = new ProveBildeCanvas(ctx, options3);
-      if (options3.fx) {
-        this.#provebildeFx = new ProveBildeFx(ctx, options3.fx);
+    constructor(ctx, options2) {
+      this.#options = options2;
+      this.#provebildeCanvas = new ProveBildeCanvas(ctx, options2);
+      if (options2.fx) {
+        this.#provebildeFx = new ProveBildeFx(ctx, options2.fx);
       }
     }
     #options;
@@ -1168,7 +1207,11 @@
         // date: new Date(1985, 4, 12, 1, 23, 35),
         blurredEdgesDisabled: false,
         imageSmootingDisabled: false,
-        fx: ProveBildeFx.getDefaultFx()
+        fx: ProveBildeFx.getDefaultFx(),
+        ocd: {
+          param: "none",
+          level: 0
+        }
       };
     }
     stopWatch() {
@@ -1180,7 +1223,7 @@
     startWatch() {
       const timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
       const renderFrame = () => {
-        this.#provebildeCanvas.renderFrame(timeDelta);
+        this.#provebildeCanvas.renderFrame(timeDelta, this.#options.ocd);
         this.#provebildeFx?.renderFrame();
       };
       renderFrame();
@@ -1200,86 +1243,131 @@
     }
   };
 
-  // src/plugin.ts
-  var proveBilde;
-  var canvas;
-  var options;
-  function start() {
-    if (proveBilde) {
-      proveBilde.stop();
+  // src/provebilde-plugin.ts
+  var ProveBildePlugin = class _ProveBildePlugin {
+    constructor(options2) {
+      this.#options = options2;
+      const container = typeof options2.container === "string" ? document.querySelector(options2.container) : options2.container;
+      container.innerHTML = "";
+      this.#canvas = document.createElement("canvas");
+      container?.appendChild(this.#canvas);
+      this.#initEventHandlers(container);
+      this.#start();
     }
-    const ctx = canvas.getContext("2d");
-    const [palW, palH] = pal;
-    const [winW, winH] = [
-      ctx.canvas.parentElement.clientWidth,
-      ctx.canvas.parentElement.clientHeight
-    ];
-    const [scaleX, scaleY] = [winW / palW, winH / palH];
-    const scale = Math.min(scaleX, scaleY);
-    canvas.width = palW * scale;
-    canvas.height = palH * scale;
-    ctx.scale(scale, scale);
-    proveBilde = new ProveBilde(ctx, options);
-    proveBilde.start();
-    document.body.style.zoom = "1";
-  }
-  var debouncedStart = debounce(start, 100);
-  function initPlugin(o) {
-    options = o;
-    const container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
-    container.innerHTML = "";
-    canvas = document.createElement("canvas");
-    container?.appendChild(canvas);
-    const resizeObserver = new ResizeObserver(debouncedStart);
-    resizeObserver.observe(container);
-    start();
-    container.addEventListener("click", (e) => {
-      toggleFullScreen(e.currentTarget);
-    });
-    document.addEventListener("keydown", (e) => {
-      if (!o.fx) {
-        return;
+    static create(options2) {
+      return new _ProveBildePlugin(options2);
+    }
+    #canvas;
+    #options;
+    #proveBilde;
+    #start() {
+      if (this.#proveBilde) {
+        this.#proveBilde.stop();
       }
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-        const factor = e.key === "ArrowRight" ? 1 : -1;
-        const bsc = o.fx.brightnessSaturationContrast;
-        if (bsc) {
-          let bscKey;
-          if (e.ctrlKey && e.shiftKey) {
-            bscKey = "saturation";
-          } else if (e.ctrlKey) {
-            bscKey = "brightness";
-          } else if (e.shiftKey) {
-            bscKey = "contrast";
+      const ctx = this.#canvas.getContext("2d");
+      const [palW, palH] = pal;
+      const [winW, winH] = [
+        ctx.canvas.parentElement.clientWidth,
+        ctx.canvas.parentElement.clientHeight
+      ];
+      const [scaleX, scaleY] = [winW / palW, winH / palH];
+      const scale = Math.min(scaleX, scaleY);
+      this.#canvas.width = palW * scale;
+      this.#canvas.height = palH * scale;
+      ctx.scale(scale, scale);
+      this.#proveBilde = new ProveBilde(ctx, this.#options);
+      this.#proveBilde.start();
+      document.body.style.zoom = "1";
+    }
+    #debouncedStart = debounce(
+      this.#start.bind(this),
+      100
+    );
+    #initEventHandlers(container) {
+      const o = this.#options;
+      const resizeObserver = new ResizeObserver(this.#debouncedStart);
+      resizeObserver.observe(container);
+      container.addEventListener("click", (e) => {
+        toggleFullScreen(e.currentTarget);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!o.fx) {
+          return;
+        }
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          const factor = e.key === "ArrowRight" ? 1 : -1;
+          const bsc = o.fx.brightnessSaturationContrast;
+          if (bsc) {
+            let bscKey;
+            if (e.ctrlKey && e.shiftKey) {
+              bscKey = "saturation";
+            } else if (e.ctrlKey) {
+              bscKey = "brightness";
+            } else if (e.shiftKey) {
+              bscKey = "contrast";
+            }
+            if (bscKey) {
+              const value = WebGLUtil.clamp(
+                -1,
+                bsc[bscKey] + 0.01 * factor,
+                1
+              );
+              bsc[bscKey] = value;
+              this.#options.ocd.level = value;
+              this.#options.ocd.param = bscKey;
+            }
           }
-          if (bscKey) {
-            bsc[bscKey] = WebGLUtil.clamp(
-              -1,
-              bsc[bscKey] + 5e-3 * factor,
+        } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+          const factor = e.key === "ArrowUp" ? 1 : -1;
+          const bp = o.fx.bulgePinch;
+          if (bp) {
+            bp.strength = WebGLUtil.clamp(
+              0,
+              bp.strength + 5e-3 * factor,
               1
             );
           }
+        } else if (/^[ \wæøå.,]$/u.test(e.key)) {
+          const char = e.key.toUpperCase();
+          if (!e.shiftKey) {
+            o.headerText += char;
+          } else {
+            o.footerText += char;
+          }
+        } else if (e.key === "Backspace") {
+          if (e.shiftKey && o.footerText) {
+            o.footerText = o.footerText.substring(
+              0,
+              o.footerText.length - 1
+            );
+          } else if (!e.shiftKey && o.headerText) {
+            o.headerText = o.headerText.substring(
+              0,
+              o.headerText.length - 1
+            );
+          }
+        } else if (e.key === "Delete") {
+          if (e.shiftKey) {
+            o.footerText = "";
+          } else {
+            o.headerText = "";
+          }
         }
-      }
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        const factor = e.key === "ArrowUp" ? 1 : -1;
-        const bp = o.fx.bulgePinch;
-        if (bp) {
-          bp.strength = WebGLUtil.clamp(
-            0,
-            bp.strength + 5e-3 * factor,
-            1
-          );
-        }
-      }
-    });
-  }
+      });
+      window.addEventListener("blur", () => {
+        this.#proveBilde.stop();
+      });
+      window.addEventListener("focus", () => {
+        this.#proveBilde.start();
+      });
+    }
+  };
 
   // src/index.ts
-  var options2 = {
+  var options = {
     container: document.body,
-    headerText: "jasMIN",
-    footerText: "Retro TV",
+    headerText: "JASMIN",
+    footerText: "RETRO TV",
     showDate: true,
     showTime: true,
     // date: new Date(1985, 4, 12, 1, 23, 35),
@@ -1298,10 +1386,14 @@
         size: 0.25,
         amount: 0.58
       }
+    },
+    ocd: {
+      param: "none",
+      level: 0
     }
   };
   document.addEventListener("DOMContentLoaded", () => {
-    initPlugin(options2);
+    ProveBildePlugin.create(options);
   });
 })();
 //# sourceMappingURL=bundle.js.map

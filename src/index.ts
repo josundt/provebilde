@@ -1,9 +1,12 @@
-import { initPlugin, type ProveBildePluginOptions } from "./plugin.ts";
+import {
+    ProveBildePlugin,
+    type ProveBildePluginOptions
+} from "./provebilde-plugin.ts";
 
 const options: ProveBildePluginOptions = {
     container: document.body,
-    headerText: "jasMIN",
-    footerText: "Retro TV",
+    headerText: "JASMIN",
+    footerText: "RETRO TV",
     showDate: true,
     showTime: true,
 
@@ -24,9 +27,13 @@ const options: ProveBildePluginOptions = {
             size: 0.25,
             amount: 0.58
         }
+    },
+    ocd: {
+        param: "none",
+        level: 0
     }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    initPlugin(options);
+    ProveBildePlugin.create(options);
 });
