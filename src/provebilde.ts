@@ -22,6 +22,7 @@ export class ProveBilde {
     readonly #provebildeCanvas: ProveBildeCanvas;
     readonly #provebildeFx: ProveBildeFx | null = null;
     #watchTimer: number | null = 0;
+    timeDelta: number = 0;
 
     static getDefaultOptions(): ProveBildeOptions {
         return {
@@ -50,12 +51,15 @@ export class ProveBilde {
     }
 
     startWatch(): void {
-        const timeDelta = !this.#options.date
+        this.timeDelta = !this.#options.date
             ? 0
             : Date.now() - this.#options.date.getTime();
 
         const renderFrame = (): void => {
-            this.#provebildeCanvas.renderFrame(timeDelta, this.#options.ocd);
+            this.#provebildeCanvas.renderFrame(
+                this.timeDelta,
+                this.#options.ocd
+            );
             this.#provebildeFx?.renderFrame();
         };
 

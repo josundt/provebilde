@@ -58,6 +58,10 @@ export class ProveBildePlugin {
         100
     );
 
+    readonly #debouncedClearOsd: () => void = debounce(() => {
+        this.#options.ocd.param = "none";
+    }, 3000);
+
     #initEventHandlers(container: Element): void {
         const o = this.#options;
         const resizeObserver = new ResizeObserver(this.#debouncedStart);
@@ -78,7 +82,9 @@ export class ProveBildePlugin {
                 if (bsc) {
                     let bscKey: keyof typeof bsc | undefined;
 
-                    if (e.ctrlKey && e.shiftKey) {
+                    if (!e.ctrlKey && !e.shiftKey) {
+                        this.#proveBilde.timeDelta += 60_000 * factor * -1;
+                    } else if (e.ctrlKey && e.shiftKey) {
                         bscKey = "saturation";
                     } else if (e.ctrlKey) {
                         bscKey = "brightness";
@@ -95,6 +101,7 @@ export class ProveBildePlugin {
                         this.#options.ocd.level = value;
                         this.#options.ocd.param =
                             bscKey as OnScreenDisplay["param"];
+                        this.#debouncedClearOsd();
                     }
                 }
             } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {

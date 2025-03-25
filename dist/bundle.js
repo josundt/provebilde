@@ -1188,6 +1188,9 @@
   // src/provebilde.ts
   var ProveBilde = class {
     constructor(ctx, options2) {
+      this.#provebildeFx = null;
+      this.#watchTimer = 0;
+      this.timeDelta = 0;
       this.#options = options2;
       this.#provebildeCanvas = new ProveBildeCanvas(ctx, options2);
       if (options2.fx) {
@@ -1196,8 +1199,8 @@
     }
     #options;
     #provebildeCanvas;
-    #provebildeFx = null;
-    #watchTimer = 0;
+    #provebildeFx;
+    #watchTimer;
     static getDefaultOptions() {
       return {
         headerText: "jasMIN",
@@ -1221,9 +1224,12 @@
       }
     }
     startWatch() {
-      const timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
+      this.timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
       const renderFrame = () => {
-        this.#provebildeCanvas.renderFrame(timeDelta, this.#options.ocd);
+        this.#provebildeCanvas.renderFrame(
+          this.timeDelta,
+          this.#options.ocd
+        );
         this.#provebildeFx?.renderFrame();
       };
       renderFrame();
@@ -1283,6 +1289,9 @@
       this.#start.bind(this),
       100
     );
+    #debouncedClearOsd = debounce(() => {
+      this.#options.ocd.param = "none";
+    }, 3e3);
     #initEventHandlers(container) {
       const o = this.#options;
       const resizeObserver = new ResizeObserver(this.#debouncedStart);
@@ -1299,7 +1308,9 @@
           const bsc = o.fx.brightnessSaturationContrast;
           if (bsc) {
             let bscKey;
-            if (e.ctrlKey && e.shiftKey) {
+            if (!e.ctrlKey && !e.shiftKey) {
+              this.#proveBilde.timeDelta += 6e4 * factor * -1;
+            } else if (e.ctrlKey && e.shiftKey) {
               bscKey = "saturation";
             } else if (e.ctrlKey) {
               bscKey = "brightness";
@@ -1315,6 +1326,7 @@
               bsc[bscKey] = value;
               this.#options.ocd.level = value;
               this.#options.ocd.param = bscKey;
+              this.#debouncedClearOsd();
             }
           }
         } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
