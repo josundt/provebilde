@@ -46,7 +46,7 @@ export class ProveBildeFx {
         };
     }
 
-    renderInitial(): void {
+    init(): void {
         const className = "provebilde-fx";
         const source = this.#ctx.canvas;
         let glCanvas = source.parentElement?.querySelector(

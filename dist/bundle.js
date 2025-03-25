@@ -362,7 +362,7 @@
       }
       return h;
     }
-    #renderCrossedLines() {
+    #renderCrossedLines(leaveSpaceForDate, leaveSpaceForTime) {
       const ctx = this.#ctx;
       const [, , fW] = this.#rect;
       const h = 42;
@@ -371,7 +371,13 @@
       ctx.fillRect(-fW / 2, 0, fW, h + 1);
       ctx.fillStyle = "#fff";
       ctx.fillRect(-fW / 2, h / 2 - 1, fW, 2);
-      for (let x = -itemW * 6.5 - 2; x < itemW * 6.5; x += itemW) {
+      for (let x = -itemW * 6.5 - 2, i = 0; x < itemW * 6.5; x += itemW, i++) {
+        if (leaveSpaceForDate && i > 1 && i < 5) {
+          continue;
+        }
+        if (leaveSpaceForTime && i > 8 && i < 12) {
+          continue;
+        }
         ctx.fillRect(x, 0, 4, h);
         ctx.save();
         ctx.fillStyle = this.#edgeColor.darken;
@@ -453,7 +459,7 @@
       ctx.restore();
       return h;
     }
-    #renderCompleteForground(y, cX) {
+    #renderCompleteForground(y, cX, leaveSpaceForDate, leaveSpaceForTime) {
       const trans = this.#translate.bind(this);
       this.#ctx.save();
       this.#ctx.fillStyle = "#fff";
@@ -464,7 +470,11 @@
       y += trans(cX, y, () => this.#renderReflectionCheckRow(false));
       y += trans(cX, y, () => this.#renderSquareWave75Row());
       y += trans(cX, y, () => this.#renderColoBar75Row());
-      y += trans(cX, y, () => this.#renderCrossedLines());
+      y += trans(
+        cX,
+        y,
+        () => this.#renderCrossedLines(leaveSpaceForDate, leaveSpaceForTime)
+      );
       y += trans(cX, y, () => this.#renderDefinitionLinesRow());
       y += trans(cX, y, () => this.#renderGrayScaleStairCaseRow());
       y += trans(cX, y, () => this.#renderReflectionCheckRow(true));
@@ -472,7 +482,7 @@
       y = pal[1] / 2 - 63;
       trans(cX, y, () => this.#renderCrossHair());
     }
-    render() {
+    render(leaveSpaceForDate, leaveSpaceForTime) {
       const [palW, palH] = pal;
       const [centerX, centerY] = [palW / 2, palH / 2];
       const radius = 84 * 3;
@@ -482,7 +492,12 @@
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.clip();
       const foreGroundYOffset = (palH - radius * 2) / 2;
-      this.#renderCompleteForground(foreGroundYOffset, centerX);
+      this.#renderCompleteForground(
+        foreGroundYOffset,
+        centerX,
+        leaveSpaceForDate,
+        leaveSpaceForTime
+      );
       ctx.restore();
     }
   };
@@ -599,7 +614,7 @@
       ctx.strokeText(paramText, 0, 0, 1e3);
       ctx.restore();
     }
-    renderInitial() {
+    init() {
       const ctx = this.#ctx;
       if (this.#options.imageSmootingDisabled) {
         ctx.imageSmoothingEnabled = false;
@@ -612,7 +627,7 @@
       const [palW, palH] = pal;
       const [centerX] = [palW / 2, palH / 2];
       this.#background.render();
-      this.#circle.render();
+      this.#circle.render(!!o.showDate, !!o.showTime);
       if (o.showDate) {
         this.#renderTime(dt, "date", 155);
       }
@@ -1142,7 +1157,7 @@
         }
       };
     }
-    renderInitial() {
+    init() {
       const className = "provebilde-fx";
       const source = this.#ctx.canvas;
       let glCanvas = source.parentElement?.querySelector(
@@ -1188,9 +1203,6 @@
   // src/provebilde.ts
   var ProveBilde = class {
     constructor(ctx, options2) {
-      this.#provebildeFx = null;
-      this.#watchTimer = 0;
-      this.timeDelta = 0;
       this.#options = options2;
       this.#provebildeCanvas = new ProveBildeCanvas(ctx, options2);
       if (options2.fx) {
@@ -1199,8 +1211,8 @@
     }
     #options;
     #provebildeCanvas;
-    #provebildeFx;
-    #watchTimer;
+    #provebildeFx = null;
+    #watchTimer = 0;
     static getDefaultOptions() {
       return {
         headerText: "jasMIN",
@@ -1224,7 +1236,9 @@
       }
     }
     startWatch() {
-      this.timeDelta = !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
+      if (this.timeDelta === void 0) {
+        this.timeDelta ??= !this.#options.date ? 0 : Date.now() - this.#options.date.getTime();
+      }
       const renderFrame = () => {
         this.#provebildeCanvas.renderFrame(
           this.timeDelta,
@@ -1238,8 +1252,8 @@
     }
     start() {
       const o = this.#options;
-      this.#provebildeCanvas.renderInitial();
-      this.#provebildeFx?.renderInitial();
+      this.#provebildeCanvas.init();
+      this.#provebildeFx?.init();
       if (o.showDate || o.showTime) {
         this.startWatch();
       }

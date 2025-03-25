@@ -22,7 +22,7 @@ export class ProveBilde {
     readonly #provebildeCanvas: ProveBildeCanvas;
     readonly #provebildeFx: ProveBildeFx | null = null;
     #watchTimer: number | null = 0;
-    timeDelta: number = 0;
+    timeDelta!: number;
 
     static getDefaultOptions(): ProveBildeOptions {
         return {
@@ -51,9 +51,11 @@ export class ProveBilde {
     }
 
     startWatch(): void {
-        this.timeDelta = !this.#options.date
-            ? 0
-            : Date.now() - this.#options.date.getTime();
+        if (this.timeDelta === undefined) {
+            this.timeDelta ??= !this.#options.date
+                ? 0
+                : Date.now() - this.#options.date.getTime();
+        }
 
         const renderFrame = (): void => {
             this.#provebildeCanvas.renderFrame(
@@ -70,8 +72,8 @@ export class ProveBilde {
 
     start(): void {
         const o = this.#options;
-        this.#provebildeCanvas.renderInitial();
-        this.#provebildeFx?.renderInitial();
+        this.#provebildeCanvas.init();
+        this.#provebildeFx?.init();
         if (o.showDate || o.showTime) {
             this.startWatch();
         }

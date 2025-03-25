@@ -167,7 +167,7 @@ export class ProveBildeCanvas {
         ctx.restore();
     }
 
-    renderInitial(): void {
+    init(): void {
         const ctx = this.#ctx;
 
         if (this.#options.imageSmootingDisabled) {
@@ -184,7 +184,7 @@ export class ProveBildeCanvas {
         const [centerX] = [palW / 2, palH / 2];
 
         this.#background.render();
-        this.#circle.render();
+        this.#circle.render(!!o.showDate, !!o.showTime);
 
         if (o.showDate) {
             this.#renderTime(dt, "date", 155);

@@ -141,7 +141,10 @@ export class ProveBildeCanvasCircle {
         return h;
     }
 
-    #renderCrossedLines(): number {
+    #renderCrossedLines(
+        leaveSpaceForDate: boolean,
+        leaveSpaceForTime: boolean
+    ): number {
         const ctx = this.#ctx;
         const [, , fW] = this.#rect;
         const h = 42;
@@ -155,7 +158,17 @@ export class ProveBildeCanvasCircle {
         ctx.fillStyle = "#fff";
         ctx.fillRect(-fW / 2, h / 2 - 1, fW, 2);
 
-        for (let x = -itemW * 6.5 - 2; x < itemW * 6.5; x += itemW) {
+        for (
+            let x = -itemW * 6.5 - 2, i = 0;
+            x < itemW * 6.5;
+            x += itemW, i++
+        ) {
+            if (leaveSpaceForDate && i > 1 && i < 5) {
+                continue;
+            }
+            if (leaveSpaceForTime && i > 8 && i < 12) {
+                continue;
+            }
             // Line
             ctx.fillRect(x, 0, 4, h);
 
@@ -270,7 +283,12 @@ export class ProveBildeCanvasCircle {
         return h;
     }
 
-    #renderCompleteForground(y: number, cX: number): void {
+    #renderCompleteForground(
+        y: number,
+        cX: number,
+        leaveSpaceForDate: boolean,
+        leaveSpaceForTime: boolean
+    ): void {
         const trans = this.#translate.bind(this);
 
         this.#ctx.save();
@@ -294,7 +312,9 @@ export class ProveBildeCanvasCircle {
         y += trans(cX, y, () => this.#renderColoBar75Row());
 
         // Row 6
-        y += trans(cX, y, () => this.#renderCrossedLines());
+        y += trans(cX, y, () =>
+            this.#renderCrossedLines(leaveSpaceForDate, leaveSpaceForTime)
+        );
 
         // Row 7
         y += trans(cX, y, () => this.#renderDefinitionLinesRow());
@@ -314,7 +334,7 @@ export class ProveBildeCanvasCircle {
         trans(cX, y, () => this.#renderCrossHair());
     }
 
-    render(): void {
+    render(leaveSpaceForDate: boolean, leaveSpaceForTime: boolean): void {
         const [palW, palH] = pal;
         const [centerX, centerY] = [palW / 2, palH / 2];
         const radius = 84 * 3;
@@ -327,7 +347,12 @@ export class ProveBildeCanvasCircle {
         ctx.clip();
 
         const foreGroundYOffset = (palH - radius * 2) / 2;
-        this.#renderCompleteForground(foreGroundYOffset, centerX);
+        this.#renderCompleteForground(
+            foreGroundYOffset,
+            centerX,
+            leaveSpaceForDate,
+            leaveSpaceForTime
+        );
         ctx.restore();
     }
 }
