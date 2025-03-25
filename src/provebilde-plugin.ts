@@ -32,6 +32,7 @@ export class ProveBildePlugin {
     readonly #canvas: HTMLCanvasElement;
     readonly #options: ProveBildePluginOptions;
     #proveBilde!: ProveBilde;
+    focusedTextBox: "headerText" | "footerText" = "headerText";
 
     #start(): void {
         if (this.#proveBilde) {
@@ -75,7 +76,7 @@ export class ProveBildePlugin {
                 return;
             }
 
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            if (["ArrowRight", "ArrowLeft"].includes(e.key)) {
                 const factor = e.key === "ArrowRight" ? 1 : -1;
 
                 const bsc = o.fx.brightnessSaturationContrast;
@@ -104,7 +105,8 @@ export class ProveBildePlugin {
                         this.#debouncedClearOsd();
                     }
                 }
-            } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault();
+            } else if (["ArrowUp", "ArrowDown"].includes(e.key)) {
                 const factor = e.key === "ArrowUp" ? 1 : -1;
 
                 const bp = o.fx.bulgePinch;
@@ -115,31 +117,44 @@ export class ProveBildePlugin {
                         1
                     );
                 }
-            } else if (/^[ \wæøå.,]$/u.test(e.key)) {
+                e.preventDefault();
+            } else if (["PageUp", "PageDown"].includes(e.key)) {
+                const factor = e.key === "PageUp" ? 1 : -1;
+                const nowTime = Date.now();
+                const displayedDate = new Date(
+                    nowTime + this.#proveBilde.timeDelta
+                );
+                const newTime = displayedDate.setDate(
+                    displayedDate.getDate() + factor
+                );
+                this.#proveBilde.timeDelta = newTime - nowTime;
+                e.preventDefault();
+            } else if (e.key === "Tab") {
+                this.focusedTextBox =
+                    this.focusedTextBox === "headerText"
+                        ? "footerText"
+                        : "headerText";
+                e.preventDefault();
+            } else if (/^.$/u.test(e.key)) {
                 const char = e.key.toUpperCase();
-                if (!e.shiftKey) {
-                    o.headerText += char;
-                } else {
-                    o.footerText += char;
-                }
+                const textProp = this.focusedTextBox;
+                o[textProp] += char;
+                e.preventDefault();
             } else if (e.key === "Backspace") {
-                if (e.shiftKey && o.footerText) {
-                    o.footerText = o.footerText.substring(
+                const textProp = this.focusedTextBox;
+                if (o[textProp]) {
+                    o[textProp] = o[textProp].substring(
                         0,
-                        o.footerText.length - 1
-                    );
-                } else if (!e.shiftKey && o.headerText) {
-                    o.headerText = o.headerText.substring(
-                        0,
-                        o.headerText.length - 1
+                        o[textProp].length - 1
                     );
                 }
+                e.preventDefault();
             } else if (e.key === "Delete") {
-                if (e.shiftKey) {
-                    o.footerText = "";
-                } else {
-                    o.headerText = "";
+                const textProp = this.focusedTextBox;
+                if (o[textProp]) {
+                    o[textProp] = "";
                 }
+                e.preventDefault();
             }
         });
 

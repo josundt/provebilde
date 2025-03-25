@@ -136,7 +136,7 @@ export class ProveBildeCanvasCircle {
         for (const [i, color] of colors.entries()) {
             const x = (i - 3) * itemW;
             ctx.fillStyle = color;
-            ctx.fillRect(x, 0, itemW + 1, h);
+            ctx.fillRect(x, 0, itemW + 1, h + 1);
         }
         return h;
     }
