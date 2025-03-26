@@ -154,10 +154,8 @@ export class ProveBildeCanvasCircle {
         ctx.fillStyle = "#000";
         ctx.fillRect(-fW / 2, 0, fW, h + 1);
 
-        // Horizontal line
+        // Change to white for lines
         ctx.fillStyle = "#fff";
-        ctx.fillRect(-fW / 2, h / 2 - 1, fW, 2);
-
         for (
             let x = -itemW * 6.5 - 2, i = 0;
             x < itemW * 6.5;
@@ -169,10 +167,18 @@ export class ProveBildeCanvasCircle {
             if (leaveSpaceForTime && i > 8 && i < 12) {
                 continue;
             }
-            // Line
+
+            // (Possible) horizontal Line
+            let drawHorLine = !leaveSpaceForDate || i !== 1;
+            drawHorLine &&= !leaveSpaceForTime || i !== 8;
+            if (drawHorLine) {
+                ctx.fillRect(x + 1, h / 2 - 1, itemW - 1, 2);
+            }
+
+            // Vertical Line
             ctx.fillRect(x, 0, 4, h);
 
-            // Darkened edges:
+            // Vertical line darkened edges:
             ctx.save();
             ctx.fillStyle = this.#edgeColor.darken;
             ctx.fillRect(x, 0, 1, h);
@@ -190,7 +196,7 @@ export class ProveBildeCanvasCircle {
         const [, , fW] = this.#rect;
 
         ctx.beginPath();
-        ctx.rect(-fW / 2, 0, fW, h);
+        ctx.rect(-fW / 2, 0, fW, h + 1);
         ctx.clip();
 
         let x = -3.5 * itemW;
