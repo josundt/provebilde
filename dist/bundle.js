@@ -1376,7 +1376,7 @@
           this.#focusedTextBox = this.#focusedTextBox === "headerText" ? "footerText" : "headerText";
           this.#hadKeyStrokeAfterFocus = false;
           e.preventDefault();
-        } else if (/^.$/u.test(e.key)) {
+        } else if (/^.$/u.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
           const char = e.key.toUpperCase();
           const textProp = this.#focusedTextBox;
           if (!this.#hadKeyStrokeAfterFocus) {
